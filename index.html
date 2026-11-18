@@ -3,2230 +3,2645 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ROOFTOP RUSH — 3D Arcade Car-Parkour Racing</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <title>Vice Coast Rush — Sea Stunt Hypercar Parkour</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    /* ==========================================================================
+       100% SELF-CONTAINED INLINED CSS (ZERO EXTERNAL DEPENDENCIES)
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-      background: #070b19; color: #f8fafc; font-family: 'Inter', system-ui, sans-serif;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #090d1a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      touch-action: none;
     }
-    #game-canvas-container {
-      position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+
+    #game-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index: 1;
     }
-    canvas { display: block; width: 100%; height: 100%; }
+
+    /* Radial Supersonic Speed Lines Overlay */
+    #speed-lines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.16s ease-out;
+      background: radial-gradient(
+        circle at center,
+        transparent 44%,
+        rgba(236, 72, 153, 0.18) 76%,
+        rgba(34, 211, 238, 0.46) 100%
+      );
+      box-shadow: inset 0 0 110px rgba(236, 72, 153, 0.42);
+    }
+
+    /* Glassmorphic Vice Coast HUD Panels */
     .hud-glass {
-      background: rgba(10, 15, 32, 0.80);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(56, 189, 248, 0.28);
-      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
+      background: linear-gradient(145deg, rgba(13, 19, 38, 0.82), rgba(34, 22, 68, 0.74));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(244, 114, 182, 0.32);
+      box-shadow: 0 10px 30px rgba(2, 6, 23, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
-    .neon-text-pink { text-shadow: 0 0 18px rgba(255, 51, 102, 0.85), 0 0 36px rgba(255, 51, 102, 0.45); }
-    .neon-text-cyan { text-shadow: 0 0 16px rgba(0, 240, 255, 0.85); }
-    .speed-lines {
-      pointer-events: none; position: absolute; inset: 0; z-index: 5; opacity: 0;
-      background:
-        radial-gradient(circle at 50% 50%, transparent 50%, rgba(0, 240, 255, 0.16) 86%, rgba(255, 51, 102, 0.34) 100%),
-        repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.03) 0deg 1.5deg, transparent 1.5deg 9deg);
-      transition: opacity 0.14s ease;
+
+    .font-display {
+      font-family: 'Impact', 'Arial Black', 'Segoe UI', sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    /* Main HUD Layout */
+    #hud-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 16px;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .telemetry-strip {
+      border-radius: 16px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .label-pink { color: #f472b6; }
+    .label-cyan { color: #22d3ee; }
+    .label-gold { color: #facc15; }
+    .label-muted { color: #cbd5e1; }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.15;
+    }
+
+    .stat-value.gold { color: #fde047; }
+
+    .divider-v {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    /* Top Right Controls */
+    .controls-strip {
+      border-radius: 16px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .pill-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #f8fafc;
+      background: rgba(15, 23, 42, 0.82);
+      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: #f472b6;
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    .pill-btn:active {
+      transform: scale(0.95);
+    }
+
+    .pill-btn.sky-btn {
+      background: rgba(219, 39, 119, 0.26);
+      border-color: rgba(244, 114, 182, 0.5);
+      color: #fbcfe8;
+    }
+
+    .pill-btn.cp-btn {
+      background: rgba(245, 158, 11, 0.24);
+      border-color: rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+    }
+
+    .quality-group {
+      display: flex;
+      align-items: center;
+      background: rgba(9, 13, 26, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .quality-btn {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 7px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .quality-btn:hover {
+      color: #ffffff;
+    }
+
+    .quality-btn.active {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: #ffffff;
+    }
+
+    .fps-badge {
+      padding: 5px 8px;
+      border-radius: 9px;
+      background: rgba(9, 13, 26, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 11px;
+      font-weight: 800;
+      color: #6ee7b7;
+    }
+
+    .fps-badge.warn {
+      color: #fcd34d;
+    }
+
+    /* Center Stunt Toast Container */
+    #combo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      margin: auto 0;
+      gap: 4px;
+    }
+
+    @keyframes floatToast {
+      0% { opacity: 0; transform: translateY(16px) scale(0.88); }
+      18% { opacity: 1; transform: translateY(0) scale(1.05); }
+      80% { opacity: 1; transform: translateY(-10px) scale(1); }
+      100% { opacity: 0; transform: translateY(-24px) scale(0.95); }
+    }
+
+    .toast-msg {
+      animation: floatToast 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.9), 0 0 20px rgba(236, 72, 153, 0.55);
+      text-align: center;
+    }
+
+    /* Bottom Deck: Speedometer Left + Centered Ergonomic Driving Console + Hints Right */
+    .bottom-deck {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .speedo-card {
+      border-radius: 18px;
+      padding: 10px 14px;
+      width: 245px;
+      flex-shrink: 0;
+    }
+
+    .speedo-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .speed-num {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .speed-unit {
+      font-size: 11px;
+      font-weight: 800;
+      color: #f472b6;
+      margin-left: 4px;
+    }
+
+    .state-tag {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #34d399;
+    }
+
+    /* Live Precision Steering Gauge */
+    .steer-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(9, 13, 26, 0.92);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 7px;
+    }
+
+    .steer-center-mark {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.45);
+      transform: translateX(-50%);
+    }
+
+    #hud-steer-dot {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22d3ee, #f472b6);
+    }
+
+    /* Nitro Bar */
+    .nitro-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(9, 13, 26, 0.92);
+      border-radius: 999px;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      overflow: hidden;
+    }
+
+    #hud-nitro-bar {
+      height: 100%;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ec4899 0%, #22d3ee 55%, #fde047 100%);
+      transition: width 0.07s linear;
+    }
+
+    .nitro-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 800;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    /* Centered Ergonomic Driving Console */
+    .center-console {
+      border-radius: 22px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      pointer-events: auto;
+      border: 1px solid rgba(244, 114, 182, 0.45);
+      margin: 0 auto;
+    }
+
+    .drive-btn {
+      height: 54px;
+      min-width: 56px;
+      padding: 0 14px;
+      border-radius: 15px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.96));
+      border: 1.5px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 6px 16px rgba(2, 6, 23, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.07s ease, border-color 0.08s ease, box-shadow 0.08s ease;
+    }
+
+    .drive-btn:hover {
+      border-color: rgba(244, 114, 182, 0.75);
+    }
+
+    .drive-btn.active,
+    .drive-btn:active {
+      transform: scale(0.93) translateY(1px);
+      background: linear-gradient(180deg, rgba(236, 72, 153, 0.42), rgba(6, 182, 212, 0.36));
+      border-color: #f472b6;
+      box-shadow: 0 0 18px rgba(236, 72, 153, 0.65);
+    }
+
+    .drive-btn .arrow-icon {
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .drive-btn .btn-main {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+    }
+
+    .drive-btn .btn-sub {
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    .drive-btn.brake { border-color: rgba(251, 191, 36, 0.45); color: #fcd34d; }
+    .drive-btn.gas { border-color: rgba(52, 211, 153, 0.52); color: #6ee7b7; }
+    .drive-btn.nitro {
+      border-color: rgba(244, 114, 182, 0.65);
+      background: linear-gradient(180deg, rgba(131, 24, 67, 0.65), rgba(30, 27, 75, 0.9));
+      color: #f9a8d4;
+    }
+
+    /* Right Keycap Legend */
+    .key-legend {
+      border-radius: 16px;
+      padding: 10px 14px;
+      width: 230px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      color: #e2e8f0;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    kbd {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       START MODAL (VICE COAST LAUNCH SCREEN)
+       ========================================================================== */
+    #start-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35), rgba(9, 13, 26, 0.72));
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    #start-modal.hidden {
+      display: none !important;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 470px;
+      border-radius: 26px;
+      padding: 26px 24px;
+      text-align: center;
+      border: 1px solid rgba(244, 114, 182, 0.48);
+    }
+
+    .vice-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(236, 72, 153, 0.22);
+      border: 1px solid rgba(244, 114, 182, 0.5);
+      color: #f9a8d4;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      margin-bottom: 10px;
+    }
+
+    .game-title {
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1.05;
+      background: linear-gradient(90deg, #fef08a 0%, #f472b6 50%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .game-subtitle {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #cbd5e1;
+      margin-bottom: 18px;
+    }
+
+    .config-panel {
+      background: rgba(9, 13, 26, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .config-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #cbd5e1;
+    }
+
+    #selected-paint-name {
+      color: #f472b6;
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .paint-swatch {
+      height: 38px;
+      border-radius: 11px;
+      border: 2px solid transparent;
+      opacity: 0.78;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
+    }
+
+    .paint-swatch:hover {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .paint-swatch.selected {
+      opacity: 1;
+      border-color: #ffffff;
+      box-shadow: 0 0 14px rgba(244, 114, 182, 0.7);
+      transform: scale(1.04);
+    }
+
+    .rival-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .rival-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .rival-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* Custom Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background-color: #334155;
+      border-radius: 999px;
+      transition: 0.2s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .switch input:checked + .slider {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(20px);
+    }
+
+    .launch-btn {
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 52%, #06b6d4 100%);
+      box-shadow: 0 10px 28px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    .launch-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .launch-btn:active {
+      transform: scale(0.97);
+    }
+
+    .launch-hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    #pause-banner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      padding: 18px 34px;
+      border-radius: 18px;
+      font-size: 34px;
+      text-align: center;
+      color: #fde047;
+      pointer-events: none;
+    }
+    #pause-banner span { display: block; font-size: 12px; color: #cbd5e1; font-family: 'Segoe UI', sans-serif; margin-top: 4px; letter-spacing: 0.05em; }
+    #pause-banner.show { display: block; }
+
+    /* Fatal Diagnostic Banner (Hidden unless an error occurs) */
+    #error-banner {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: rgba(153, 27, 27, 0.95);
+      border: 1px solid #fca5a5;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      max-width: 90vw;
+    }
+
+    /* Responsive Adjustments for Mobile / Compact Screens */
+    @media (max-width: 920px) {
+      .key-legend {
+        display: none;
+      }
+    }
+
+    @media (max-width: 680px) {
+      #hud-overlay {
+        padding: 8px 10px;
+      }
+      .bottom-deck {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .speedo-card {
+        width: 100%;
+        max-width: 340px;
+        padding: 8px 12px;
+      }
+      .center-console {
+        width: 100%;
+        max-width: 360px;
+        padding: 6px 8px;
+        gap: 6px;
+      }
+      .drive-btn {
+        height: 48px;
+        min-width: 48px;
+        padding: 0 10px;
+        flex: 1;
+      }
+      .telemetry-strip {
+        padding: 6px 12px;
+        gap: 10px;
+      }
+      .stat-value {
+        font-size: 14px;
+      }
+      .hide-mobile {
+        display: none;
+      }
     }
   </style>
 </head>
-<body class="relative w-full h-full overflow-hidden">
+<body>
+  <!-- Full-Screen WebGL Canvas -->
+  <canvas id="game-canvas"></canvas>
 
-  <!-- WebGL / Asset Fallback Banner (Hidden when Three.js + WebGL initialize cleanly) -->
-  <div id="webgl-error-banner" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6 text-center">
-    <div class="max-w-md p-6 rounded-2xl border border-rose-500/50 bg-slate-900">
-      <h2 class="text-xl font-black text-rose-400 mb-2">WebGL or 3D Engine Unavailable</h2>
-      <p id="webgl-error-text" class="text-xs text-slate-300">Your browser or hardware disabled WebGL acceleration, or the Three.js CDN could not be reached. Please enable hardware acceleration or check your network connection and reload.</p>
-    </div>
-  </div>
+  <!-- Supersonic Speed Lines Overlay -->
+  <div id="speed-lines"></div>
 
-  <!-- 3D Viewport Container -->
-  <div id="game-canvas-container"></div>
+  <div id="pause-banner" class="hud-glass font-display">PAUSED<span>Press P / ESC to resume</span></div>
 
-  <!-- Boost / Speed Vignette Overlay -->
-  <div id="speed-vignette" class="speed-lines"></div>
+  <!-- Fatal Error Diagnostic Banner (Only shown on unexpected exception) -->
+  <div id="error-banner"></div>
 
-  <!-- Top Navigation & Mode Switcher Bar -->
-  <header class="absolute top-0 left-0 right-0 z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 pointer-events-none">
-    <div class="hud-glass rounded-xl px-3 py-1.5 flex items-center gap-3 pointer-events-auto">
-      <div class="flex items-center gap-2">
-        <span class="inline-block w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
-        <span class="font-black tracking-wider text-sm sm:text-base bg-gradient-to-r from-rose-500 via-amber-400 to-cyan-400 bg-clip-text text-transparent">ROOFTOP RUSH</span>
-      </div>
-      <span id="active-mode-badge" class="text-xs font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">SOLO RACE (4 CARS)</span>
-    </div>
-
-    <!-- Center Race Progress / Scoreboard -->
-    <div id="top-race-stats" class="hud-glass rounded-xl px-4 py-1.5 flex items-center gap-4 sm:gap-6 pointer-events-auto">
-      <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">POS</div>
-        <div id="hud-position" class="text-base sm:text-lg font-black text-amber-400">1 / 4</div>
-      </div>
-      <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">LAP</div>
-        <div id="hud-lap" class="text-base sm:text-lg font-black text-white">1 / 2</div>
-      </div>
-      <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">CHECKPOINT</div>
-        <div id="hud-cp" class="text-base sm:text-lg font-black text-cyan-400">0 / 10</div>
-      </div>
-      <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">TIME</div>
-        <div id="hud-timer" class="text-base sm:text-lg font-mono font-bold text-emerald-400">00:00.00</div>
-      </div>
-      <div class="hidden sm:block text-center">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">BEST</div>
-        <div id="hud-best" class="text-sm font-mono font-bold text-purple-300">--:--.--</div>
-      </div>
-    </div>
-
-    <!-- Soccer Scoreboard (Shown in Car-Soccer Mode) -->
-    <div id="top-soccer-stats" class="hidden hud-glass rounded-xl px-5 py-1.5 items-center gap-5 pointer-events-auto">
-      <div class="text-center">
-        <div class="text-[10px] font-bold text-cyan-400 uppercase">CYAN APEX</div>
-        <div id="soccer-score-blue" class="text-xl font-black text-cyan-300">0</div>
-      </div>
-      <div class="text-xs font-bold text-slate-400">VS</div>
-      <div class="text-center">
-        <div class="text-[10px] font-bold text-rose-400 uppercase">ORANGE NOVA</div>
-        <div id="soccer-score-orange" class="text-xl font-black text-rose-400">0</div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="hud-glass rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 pointer-events-auto">
-      <button id="btn-open-menu" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-600 transition">Menu / Modes</button>
-      <button id="btn-pause" type="button" title="Pause / Resume Game (ESC)" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-xs font-bold text-indigo-200 border border-indigo-400/40 transition">Pause</button>
-      <button id="btn-respawn" type="button" title="Respawn at Checkpoint (R)" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-bold text-amber-300 border border-amber-500/40 transition">Respawn (R)</button>
-      <button id="btn-restart" type="button" title="Restart Race (T)" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-xs font-bold text-rose-300 border border-rose-500/40 transition">Restart (T)</button>
-      <button id="btn-perf" type="button" title="Cycle Graphics Quality (P)" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-bold text-emerald-300 border border-emerald-500/40 transition">Laptop 60Hz</button>
-      <button id="btn-audio" type="button" title="Toggle Synth Audio" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-cyan-300 border border-slate-600 transition">SFX: ON</button>
-    </div>
-  </header>
-
-  <!-- Live 2D Rooftop Circuit Minimap (Top-Right below header) -->
-  <aside id="minimap-panel" class="hidden sm:flex flex-col items-center absolute top-16 right-3 z-20 hud-glass rounded-2xl p-2 pointer-events-none">
-    <div class="w-full flex items-center justify-between px-1 mb-1">
-      <span class="text-[9px] font-black uppercase tracking-wider text-cyan-300">SKYLINE RADAR</span>
-      <span id="minimap-next-cp" class="text-[9px] font-mono text-amber-300">CP 1</span>
-    </div>
-    <canvas id="minimap-canvas" width="136" height="156" class="rounded-xl bg-slate-950/90 border border-slate-800"></canvas>
-  </aside>
-
-  <!-- Center Countdown / Event Banner -->
-  <div id="center-banner" class="pointer-events-none absolute inset-x-0 top-20 z-20 flex flex-col items-center justify-center">
-    <div id="countdown-text" class="text-5xl sm:text-7xl font-black tracking-tight text-amber-400 neon-text-pink transition-transform duration-150"></div>
-    <div id="toast-message" class="mt-2 px-4 py-1 rounded-full bg-slate-900/90 border border-cyan-400/50 text-xs sm:text-sm font-bold text-cyan-300 opacity-0 transition-opacity duration-300">Checkpoint Reached!</div>
-  </div>
-
-  <!-- Bottom HUD: Controls Hint, Speedometer, Boost Bar, Touch Controls -->
-  <footer class="absolute bottom-0 left-0 right-0 z-20 p-3 flex flex-col sm:flex-row items-end justify-between gap-3 pointer-events-none">
-    <!-- Left: Controls & Telemetry / Touch Steering -->
-    <div class="w-full sm:w-auto flex items-end justify-between sm:justify-start gap-2 pointer-events-auto">
-      <!-- On-screen Touch D-Pad for Mobile / Narrow Canvas -->
-      <div class="flex sm:hidden items-center gap-2">
-        <button id="touch-left" type="button" class="w-12 h-12 rounded-xl hud-glass font-black text-lg text-cyan-300 active:bg-cyan-500/30">◀</button>
-        <button id="touch-right" type="button" class="w-12 h-12 rounded-xl hud-glass font-black text-lg text-cyan-300 active:bg-cyan-500/30">▶</button>
-      </div>
-
-      <!-- Desktop Key Guide & Live Telemetry -->
-      <div class="hidden sm:block hud-glass rounded-xl p-3 text-xs text-slate-300 space-y-1 max-w-xs">
-        <div class="flex items-center justify-between gap-4">
-          <span class="font-bold text-white">CONTROLS &amp; TELEMETRY</span>
-          <span id="fps-counter" class="font-mono text-[11px] text-emerald-400">60 FPS</span>
+  <!-- MAIN HUD OVERLAY -->
+  <div id="hud-overlay">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="hud-glass telemetry-strip">
+        <div class="stat-box">
+          <span class="stat-label label-pink">Checkpoint</span>
+          <span id="hud-checkpoint" class="stat-value">CP 0</span>
         </div>
-        <div><strong class="text-cyan-300">W/S</strong> Drive/Brake &bull; <strong class="text-cyan-300">A/D</strong> Steer &bull; <strong class="text-amber-300">SPACE</strong> Drift</div>
-        <div><strong class="text-rose-400">SHIFT/E</strong> Nitro &bull; <strong class="text-purple-300">C</strong> Camera &bull; <strong class="text-emerald-300">P</strong> Graphics</div>
-        <div id="status-telemetry" class="text-[11px] text-slate-400 pt-0.5">Surface: Rooftop Deck &bull; Air: Grounded</div>
-      </div>
-    </div>
-
-    <!-- Right: Speedometer, Boost Energy Meter & Touch Pedals -->
-    <div class="w-full sm:w-auto flex items-end justify-end gap-3 pointer-events-auto">
-      <!-- Touch Pedals -->
-      <div class="flex sm:hidden items-center gap-1.5">
-        <button id="touch-drift" type="button" class="px-3 h-12 rounded-xl hud-glass font-bold text-xs text-amber-300 active:bg-amber-500/30">DRIFT</button>
-        <button id="touch-boost" type="button" class="px-3 h-12 rounded-xl hud-glass font-bold text-xs text-rose-400 active:bg-rose-500/30">BOOST</button>
-        <button id="touch-brake" type="button" class="px-3 h-12 rounded-xl hud-glass font-bold text-xs text-slate-300 active:bg-slate-600/40">BRAKE</button>
-        <button id="touch-gas" type="button" class="px-4 h-12 rounded-xl bg-emerald-500/30 border border-emerald-400 font-black text-xs text-emerald-200 active:bg-emerald-500/50">GAS</button>
-      </div>
-
-      <!-- Speed & Boost Readout -->
-      <div class="hud-glass rounded-2xl p-3.5 min-w-[225px] sm:min-w-[265px]">
-        <div class="flex items-baseline justify-between mb-1.5">
-          <div class="flex items-baseline">
-            <span id="hud-speed" class="text-3xl sm:text-4xl font-black tracking-tight text-white">0</span>
-            <span class="text-xs font-bold text-slate-400 ml-1.5">KM/H</span>
-            <span id="hud-gear" class="ml-2.5 text-xs font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 border border-amber-400/30">G1</span>
-          </div>
-          <div id="hud-state-badge" class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30">GRIP</div>
+        <div class="divider-v"></div>
+        <div class="stat-box">
+          <span class="stat-label label-cyan">Distance</span>
+          <span id="hud-distance" class="stat-value">0 m</span>
         </div>
-        <div class="space-y-1">
-          <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-            <span class="text-rose-400">NITRO THRUSTER</span>
-            <span id="hud-boost-pct" class="text-cyan-300">100%</span>
-          </div>
-          <div class="w-full h-3 rounded-full bg-slate-900 overflow-hidden p-0.5 border border-slate-700">
-            <div id="hud-boost-bar" class="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-cyan-400 transition-all duration-75" style="width: 100%"></div>
-          </div>
+        <div class="divider-v"></div>
+        <div class="stat-box">
+          <span class="stat-label label-gold">Stunt Score</span>
+          <span id="hud-score" class="stat-value gold">0</span>
         </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Main Menu / Mode Selection / Graphics & Paint Modal -->
-  <div id="modal-menu" class="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-    <div class="hud-glass rounded-2xl max-w-2xl w-full p-5 sm:p-6 border border-cyan-400/30 max-h-[92vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-4">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-rose-500 via-amber-300 to-cyan-400 bg-clip-text text-transparent">ROOFTOP RUSH</h1>
-          <p class="text-xs text-slate-400">3D Neon Skyline Car-Parkour Racing &bull; Upgraded Visuals, Particle FX &amp; 60Hz Physics</p>
+        <div class="divider-v hide-mobile"></div>
+        <div class="stat-box hide-mobile">
+          <span class="stat-label label-muted">Run Time</span>
+          <span id="hud-timer" class="stat-value">00:00.0</span>
         </div>
-        <button id="btn-close-menu" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition">RESUME / DRIVE</button>
-      </div>
-
-      <!-- Mode Cards Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        <button id="mode-solo-race" type="button" class="text-left p-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border-2 border-rose-500/60 transition group">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-sm text-white group-hover:text-rose-400">1. SOLO ROOFTOP RACE</span>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300">DEFAULT</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">Race 3 rival sports cars across the sunset skyline circuit with ramps, chasms &amp; shortcuts.</p>
-        </button>
-
-        <button id="mode-time-trial" type="button" class="text-left p-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 transition group">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-sm text-white group-hover:text-cyan-300">2. SOLO TIME TRIAL</span>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">PURE SPEED</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">Solo obstacle course run to master the high-altitude steel shortcut and set your Personal Best.</p>
-        </button>
-
-        <button id="mode-harness-8" type="button" class="text-left p-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-amber-400 transition group">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-sm text-white group-hover:text-amber-300">3. 8-CAR STRESS HARNESS</span>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">8-CAR PACK</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">8 simultaneous sports cars testing chaotic rooftop bumping, spark showers &amp; 60Hz stability.</p>
-        </button>
-
-        <button id="mode-soccer" type="button" class="text-left p-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-400 transition group">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-sm text-white group-hover:text-emerald-300">4. CAR-SOCCER ARENA</span>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">BONUS MODE</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">2v2 rooftop stadium with a giant low-gravity glowing physics ball, goals &amp; scoreboard.</p>
-        </button>
-      </div>
-
-      <!-- Graphics Quality (Low / Medium / High), AI Difficulty & Car Paint -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <div class="p-3 rounded-xl bg-slate-900/75 border border-slate-800">
-          <div class="text-xs font-bold text-slate-300 mb-2">GRAPHICS QUALITY</div>
-          <div class="flex gap-1.5">
-            <button id="gfx-low" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700">Low</button>
-            <button id="gfx-medium" type="button" class="flex-1 py-1.5 rounded-lg bg-emerald-500/30 text-xs font-bold text-emerald-200 border border-emerald-400">Medium</button>
-            <button id="gfx-high" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700">High</button>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-slate-900/75 border border-slate-800">
-          <div class="text-xs font-bold text-slate-300 mb-2">AI RIVAL DIFFICULTY</div>
-          <div class="flex gap-1.5">
-            <button id="diff-rookie" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700">Rookie</button>
-            <button id="diff-pro" type="button" class="flex-1 py-1.5 rounded-lg bg-cyan-500/30 text-xs font-bold text-cyan-200 border border-cyan-400">Pro</button>
-            <button id="diff-apex" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700">Apex</button>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-slate-900/75 border border-slate-800">
-          <div class="text-xs font-bold text-slate-300 mb-2">CAR PAINT LIVERY</div>
-          <div class="flex gap-2">
-            <button id="paint-crimson" type="button" class="w-7 h-7 rounded-lg bg-rose-500 border-2 border-white" title="Crimson Fury"></button>
-            <button id="paint-cyan" type="button" class="w-7 h-7 rounded-lg bg-cyan-400 border border-slate-600" title="Cyber Cyan"></button>
-            <button id="paint-amber" type="button" class="w-7 h-7 rounded-lg bg-amber-400 border border-slate-600" title="Solar Gold"></button>
-            <button id="paint-emerald" type="button" class="w-7 h-7 rounded-lg bg-emerald-400 border border-slate-600" title="Venom Green"></button>
-            <button id="paint-violet" type="button" class="w-7 h-7 rounded-lg bg-purple-500 border border-slate-600" title="Ultraviolet"></button>
-          </div>
+        <div class="divider-v hide-mobile"></div>
+        <div class="stat-box hide-mobile">
+          <span class="stat-label label-cyan">Best</span>
+          <span id="hud-best" class="stat-value">0</span>
         </div>
       </div>
 
-      <!-- Stage 3 Multiplayer Room Sync (Cross-Tab BroadcastChannel + Modular Net Hook) -->
-      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-cyan-500/30">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div class="hud-glass controls-strip">
+        <button id="btn-sky" class="pill-btn sky-btn" title="Cycle Vice Coast Atmosphere">VICE SUNSET</button>
+
+        <div class="quality-group">
+          <button data-quality="low" class="quality-btn">LOW</button>
+          <button data-quality="med" class="quality-btn">MED</button>
+          <button data-quality="auto" class="quality-btn active">AUTO</button>
+          <button data-quality="high" class="quality-btn">HIGH</button>
+        </div>
+
+        <span id="hud-fps" class="fps-badge hide-mobile">60 FPS</span>
+
+        <button id="btn-audio" class="pill-btn" title="Toggle V10 Engine Audio">SFX ON</button>
+        <button id="btn-respawn" class="pill-btn cp-btn" title="Respawn at Checkpoint (R)">↺ CP</button>
+      </div>
+    </div>
+
+    <!-- Center Dynamic Popup Container -->
+    <div id="combo-container"></div>
+
+    <!-- Bottom Deck -->
+    <div class="bottom-deck">
+      <!-- Left: Hypercar Speedometer, Steering Gauge & Nitro -->
+      <div class="hud-glass speedo-card">
+        <div class="speedo-top">
           <div>
-            <span class="text-xs font-black text-cyan-300 uppercase">Local Cross-Tab Room Sync (2–8 Players Architecture)</span>
-            <p class="text-[11px] text-slate-400">Syncs live across same-browser tabs via BroadcastChannel; structured for WebRTC/WebSocket relay expansion.</p>
+            <span id="hud-speed" class="speed-num">0</span>
+            <span class="speed-unit">KM/H</span>
           </div>
-          <span id="net-status-pill" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">Offline / Solo</span>
+          <span id="hud-state-tag" class="state-tag">READY</span>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <input id="input-room-code" type="text" value="RR-SKYLINE-01" maxlength="18" class="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-white w-40" />
-          <button id="btn-host-room" type="button" class="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-xs font-bold text-cyan-200 transition">Host Room</button>
-          <button id="btn-join-room" type="button" class="px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/50 text-xs font-bold text-purple-200 transition">Join Room</button>
+
+        <div class="steer-track" title="Precision Steering Alignment">
+          <div class="steer-center-mark"></div>
+          <div id="hud-steer-dot"></div>
         </div>
+
+        <div class="nitro-track">
+          <div id="hud-nitro-bar"></div>
+        </div>
+        <div class="nitro-footer">
+          <span>HYPER NITRO</span>
+          <span id="hud-nitro-pct">100%</span>
+        </div>
+      </div>
+
+      <!-- Center: Ergonomic Driving Console -->
+      <div class="hud-glass center-console">
+        <button id="touch-left" class="drive-btn" aria-label="Steer Left">
+          <span class="arrow-icon">◀</span>
+        </button>
+        <button id="touch-right" class="drive-btn" aria-label="Steer Right">
+          <span class="arrow-icon">▶</span>
+        </button>
+        <button id="touch-brake" class="drive-btn brake" aria-label="Brake and Drift">
+          <span class="btn-main">BRAKE</span>
+          <span class="btn-sub">DRIFT</span>
+        </button>
+        <button id="touch-accel" class="drive-btn gas" aria-label="Accelerate">
+          <span class="btn-main">GAS</span>
+          <span class="btn-sub">TURBO</span>
+        </button>
+        <button id="touch-nitro" class="drive-btn nitro" aria-label="Hyper Nitro">
+          <span class="btn-main">NITRO</span>
+          <span class="btn-sub">445+</span>
+        </button>
+      </div>
+
+      <!-- Right: Keycap Legend -->
+      <div class="hud-glass key-legend">
+        <div class="key-row"><span>Steer / Air Pitch</span><kbd>W A S D / ARROWS</kbd></div>
+        <div class="key-row"><span>Drift / Brake</span><kbd>SPACE / S</kbd></div>
+        <div class="key-row"><span>Hyper Nitro</span><kbd>SHIFT / E</kbd></div>
+        <div class="key-row"><span>Checkpoint</span><kbd>R</kbd></div>
       </div>
     </div>
   </div>
 
-  <!-- Finish / Results Modal -->
-  <div id="modal-results" class="hidden fixed inset-0 z-30 items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-    <div class="hud-glass rounded-2xl max-w-md w-full p-6 border border-amber-400/40 text-center">
-      <div class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-1">ROOFTOP CIRCUIT COMPLETE</div>
-      <h2 id="result-headline" class="text-3xl font-black text-white mb-4">1ST PLACE FINISH!</h2>
+  <!-- START MODAL (VICE COAST LAUNCH OVERLAY) -->
+  <div id="start-modal">
+    <div class="hud-glass modal-card">
+      <div class="vice-badge">VICE COAST • SEA STUNT EDITION</div>
+      <h1 class="game-title font-display">ROOFTOP RUSH</h1>
+      <p class="game-subtitle">
+        Launch across tropical Vice Coast sea-parkour ramps at <strong>445+ KM/H</strong> with active hypercar aero, tap-calibrated steering, and instant ocean checkpoint respawns.
+      </p>
 
-      <div class="grid grid-cols-2 gap-3 mb-4 text-left">
-        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
-          <div class="text-[10px] text-slate-400 font-bold uppercase">FINAL TIME</div>
-          <div id="result-time" class="text-xl font-mono font-black text-emerald-400">00:42.18</div>
+      <div class="config-panel">
+        <div class="config-header">
+          <span>Hypercar Metallic Finish</span>
+          <span id="selected-paint-name">VICE SUNSET CORAL</span>
         </div>
-        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
-          <div class="text-[10px] text-slate-400 font-bold uppercase">PERSONAL BEST</div>
-          <div id="result-best" class="text-xl font-mono font-black text-purple-300">00:42.18</div>
+
+        <div class="swatch-grid">
+          <button
+            class="paint-swatch selected"
+            data-color="#ff3377"
+            data-name="VICE SUNSET CORAL"
+            style="background: linear-gradient(135deg, #ff7eb3, #ff1e6e);"
+            title="Vice Sunset Coral"
+          ></button>
+          <button
+            class="paint-swatch"
+            data-color="#10b981"
+            data-name="MINT FLASH"
+            style="background: linear-gradient(135deg, #6ee7b7, #059669);"
+            title="Mint Flash"
+          ></button>
+          <button
+            class="paint-swatch"
+            data-color="#06b6d4"
+            data-name="ELECTRIC CYAN"
+            style="background: linear-gradient(135deg, #67e8f9, #0284c7);"
+            title="Electric Cyan"
+          ></button>
+          <button
+            class="paint-swatch"
+            data-color="#8b5cf6"
+            data-name="MIDNIGHT VIOLET"
+            style="background: linear-gradient(135deg, #c4b5fd, #6d28d9);"
+            title="Midnight Violet"
+          ></button>
+          <button
+            class="paint-swatch"
+            data-color="#f59e0b"
+            data-name="SOLAR GOLD"
+            style="background: linear-gradient(135deg, #fde047, #d97706);"
+            title="Solar Gold"
+          ></button>
+        </div>
+
+        <div class="rival-row">
+          <div>
+            <div class="rival-title">AI Rival Hypercar (LUCIA-GT)</div>
+            <div class="rival-sub">Side-by-side Vice Coast stunt showdown</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-rival" checked />
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
-      <div id="result-standings-list" class="space-y-1.5 mb-5 text-left text-xs"></div>
-
-      <div class="flex gap-2 justify-center">
-        <button id="btn-rematch" type="button" class="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-sm transition">INSTANT REMATCH (T)</button>
-        <button id="btn-results-menu" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm border border-slate-600 transition">Modes</button>
-      </div>
+      <button id="btn-play" class="launch-btn font-display">LAUNCH RACE</button>
+      <div class="launch-hint">Click LAUNCH RACE or press <strong>ENTER / SPACE / W</strong> to start &bull; <strong>P</strong> pauses &bull; <strong>R</strong> respawns</div>
     </div>
   </div>
 
+  <!-- Three.js r128 with Automatic Fallback Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    // =========================================================================
-    // ROOFTOP RUSH — VISUAL QUALITY & 60HZ GAMEPLAY ENGINE UPGRADE
-    // =========================================================================
-    (function () {
-      "use strict";
-
-      // Verify Three.js & WebGL availability upfront with clear error fallback
-      if (typeof THREE === "undefined") {
-        const banner = document.getElementById("webgl-error-banner");
-        if (banner) banner.classList.remove("hidden");
-        return;
+    // Global Fatal Diagnostic Guard
+    window.onerror = function (msg, url, line) {
+      const banner = document.getElementById('error-banner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.textContent = 'WebGL Diagnostic: ' + msg + ' (Line ' + line + ')';
       }
+      return false;
+    };
 
-      // --- Synthesized Web Audio SFX Engine (Zero External Files) ---
-      const Sfx = {
-        ctx: null,
-        muted: false,
-        init() {
-          if (!this.ctx) {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (AudioCtx) this.ctx = new AudioCtx();
+    (function loadThreeAndStart() {
+      if (window.THREE) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initViceCoastGame);
+        } else {
+          initViceCoastGame();
+        }
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/three@0.128.0/build/three.min.js';
+        script.onload = initViceCoastGame;
+        script.onerror = function () {
+          const banner = document.getElementById('error-banner');
+          if (banner) {
+            banner.style.display = 'block';
+            banner.textContent = 'Unable to load Three.js WebGL library. Please check internet access and refresh.';
           }
-          if (this.ctx && this.ctx.state === "suspended") {
-            this.ctx.resume().catch(() => {});
-          }
-        },
-        playTone(freq, type, duration, gainVal) {
-          if (this.muted || !this.ctx) return;
+        };
+        document.head.appendChild(script);
+      }
+    })();
+
+    /**
+     * ============================================================================
+     * VICE COAST RUSH — COMPLETE PLAYABLE 3D WEBGL GAME
+     * - GPU-safe Standard/Physical Materials & Animated Tropical Ocean Mesh
+     * - PMREM Procedural Vice Sunset Environment Reflections
+     * - Tap-Calibrated Cubic-Ease Steering + 445+ KM/H Hypercar Physics
+     * ============================================================================
+     */
+    let _viceGameStarted = false;
+    function initViceCoastGame() {
+      if (_viceGameStarted || !window.THREE) return;
+      _viceGameStarted = true;
+
+      // Scratch objects to avoid per-frame GC allocations
+      const _scratchObj = new THREE.Object3D();
+      const _scratchColor = new THREE.Color();
+      const _fwdVec = new THREE.Vector3();
+      const _rightVec = new THREE.Vector3();
+      const _UP = new THREE.Vector3(0, 1, 0);
+
+      // --------------------------------------------------------------------------
+      // 1. PROCEDURAL WEB AUDIO V10 ENGINE & STUNT SYNTHESIZER
+      // --------------------------------------------------------------------------
+      class ViceAudioEngine {
+        constructor() {
+          this.ctx = null;
+          this.enabled = true;
+          this.oscMain = null;
+          this.oscSub = null;
+          this.masterGain = null;
+        }
+
+        unlock() {
           try {
+            if (!this.ctx) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (!AudioCtx) return;
+              this.ctx = new AudioCtx();
+
+              this.oscMain = this.ctx.createOscillator();
+              this.oscSub = this.ctx.createOscillator();
+              const filter = this.ctx.createBiquadFilter();
+              this.masterGain = this.ctx.createGain();
+
+              this.oscMain.type = 'sawtooth';
+              this.oscSub.type = 'triangle';
+              this.oscMain.frequency.value = 58;
+              this.oscSub.frequency.value = 29;
+
+              filter.type = 'lowpass';
+              filter.frequency.value = 380;
+              this.masterGain.gain.value = 0.0;
+
+              this.oscMain.connect(filter);
+              this.oscSub.connect(filter);
+              filter.connect(this.masterGain);
+              this.masterGain.connect(this.ctx.destination);
+
+              this.oscMain.start();
+              this.oscSub.start();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+              this.ctx.resume();
+            }
+          } catch (e) {
+            // Audio unlock safely ignored if blocked
+          }
+        }
+
+        updateEngine(speedRatio, isNitro, isGrounded) {
+          if (!this.ctx || !this.masterGain) return;
+          if (!this.enabled) {
+            this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+            return;
+          }
+          const now = this.ctx.currentTime;
+          const pitchBoost = (isGrounded ? 0 : 26) + (isNitro ? 58 : 0);
+          const freq = 50 + speedRatio * 150 + pitchBoost;
+          this.oscMain.frequency.setTargetAtTime(freq, now, 0.06);
+          this.oscSub.frequency.setTargetAtTime(freq * 0.5, now, 0.06);
+          this.masterGain.gain.setTargetAtTime(isNitro ? 0.08 : 0.045, now, 0.08);
+        }
+
+        playBeep(f1, f2, dur, type, vol) {
+          if (!this.ctx || !this.enabled) return;
+          try {
+            const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = type || "sawtooth";
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(gainVal || 0.06, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + duration);
+            const g = this.ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(f1, now);
+            osc.frequency.exponentialRampToValueAtTime(Math.max(25, f2), now + dur);
+            g.gain.setValueAtTime(vol || 0.11, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+            osc.connect(g);
+            g.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + dur);
           } catch (e) {}
-        },
-        checkpoint() {
-          this.playTone(587.33, "triangle", 0.14, 0.08);
-          setTimeout(() => this.playTone(880, "triangle", 0.22, 0.09), 70);
-        },
-        boost() {
-          this.playTone(165, "sawtooth", 0.16, 0.045);
-        },
-        bump() {
-          this.playTone(92, "square", 0.12, 0.08);
-        },
-        landing() {
-          this.playTone(118, "triangle", 0.15, 0.07);
-        },
-        countdown(finalGo) {
-          this.playTone(finalGo ? 784 : 392, "sine", finalGo ? 0.35 : 0.15, 0.09);
         }
-      };
 
-      // --- Safe LocalStorage Helper ---
-      function loadBestTime() {
+        playCheckpoint() { this.playBeep(523.25, 1046.5, 0.28, 'triangle', 0.13); }
+        playOrb() { this.playBeep(720, 1360, 0.15, 'sine', 0.1); }
+        playBoost() { this.playBeep(190, 780, 0.34, 'sawtooth', 0.12); }
+        playScrape() { this.playBeep(120, 70, 0.12, 'square', 0.06); }
+        playSplash() { this.playBeep(210, 46, 0.45, 'sawtooth', 0.15); }
+      }
+
+      // --------------------------------------------------------------------------
+      // 2. PROCEDURAL VICE COAST ENVIRONMENT & REFLECTION TEXTURE
+      // --------------------------------------------------------------------------
+      function buildViceReflectionEnv(renderer) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+
+        // Sunset Sky Gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0.0, '#17153b');
+        grad.addColorStop(0.28, '#a21caf');
+        grad.addColorStop(0.47, '#fb7185');
+        grad.addColorStop(0.54, '#fde047');
+        grad.addColorStop(0.58, '#06b6d4');
+        grad.addColorStop(1.0, '#082f49');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 256);
+
+        // Volumetric Sun Disc
+        const sunGrad = ctx.createRadialGradient(256, 134, 4, 256, 134, 72);
+        sunGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+        sunGrad.addColorStop(0.32, 'rgba(254, 240, 138, 0.65)');
+        sunGrad.addColorStop(1, 'rgba(251, 113, 133, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(0, 0, 512, 256);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+
         try {
-          const val = localStorage.getItem("rooftop_rush_best_time");
-          return val ? parseFloat(val) : null;
+          const pmrem = new THREE.PMREMGenerator(renderer);
+          pmrem.compileEquirectangularShader();
+          const envRT = pmrem.fromEquirectangular(tex);
+          pmrem.dispose();
+          return { skyTex: tex, envMap: envRT.texture };
         } catch (e) {
-          return null;
+          return { skyTex: tex, envMap: tex };
         }
       }
-      function saveBestTime(sec) {
-        try {
-          localStorage.setItem("rooftop_rush_best_time", String(sec));
-        } catch (e) {}
-      }
-      function formatTime(sec) {
-        if (sec === null || sec === undefined || isNaN(sec) || sec < 0) return "--:--.--";
-        const mins = Math.floor(sec / 60);
-        const rem = sec % 60;
-        const whole = Math.floor(rem);
-        const hundredths = Math.floor((rem - whole) * 100);
-        return (
-          String(mins).padStart(2, "0") + ":" +
-          String(whole).padStart(2, "0") + "." +
-          String(hundredths).padStart(2, "0")
-        );
-      }
 
-      // --- Procedural High-Resolution Canvas Textures (Zero Network Dependency) ---
-      function createRoadTexture(isShortcut) {
-        const can = document.createElement("canvas");
-        can.width = 512;
-        can.height = 512;
-        const ctx = can.getContext("2d");
-        if (ctx && ctx.fillRect) {
-          ctx.fillStyle = isShortcut ? "#1e1b4b" : "#151d2e";
-          ctx.fillRect(0, 0, 512, 512);
+      // --------------------------------------------------------------------------
+      // 3. TROPICAL VICE COAST OCEAN, SUN DISC & KEYS ARCHIPELAGO
+      // --------------------------------------------------------------------------
+      class ViceCoastWorld {
+        constructor(scene, skyTex, envMap) {
+          this.scene = scene;
+          this.waterY = -26;
 
-          // Subtle asphalt grain
-          for (let i = 0; i < 600; i++) {
-            ctx.fillStyle = (i % 2 === 0) ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.06)";
-            ctx.fillRect((i * 73) % 512, (i * 137) % 512, 3, 3);
+          // Sky Sphere using GPU-safe MeshBasicMaterial with Equirectangular Texture
+          const skyGeo = new THREE.SphereGeometry(780, 32, 20);
+          this.skyMat = new THREE.MeshBasicMaterial({
+            map: skyTex,
+            side: THREE.BackSide,
+            depthWrite: false,
+          });
+          this.skyDome = new THREE.Mesh(skyGeo, this.skyMat);
+          this.scene.add(this.skyDome);
+
+          // Glowing Volumetric Sun Disc on the Horizon
+          const sunGroup = new THREE.Group();
+          const sunCore = new THREE.Mesh(
+            new THREE.CircleGeometry(38, 32),
+            new THREE.MeshBasicMaterial({ color: 0xfef9c3, fog: false })
+          );
+          const sunHalo = new THREE.Mesh(
+            new THREE.CircleGeometry(72, 32),
+            new THREE.MeshBasicMaterial({
+              color: 0xfb7185,
+              transparent: true,
+              opacity: 0.34,
+              fog: false,
+            })
+          );
+          sunHalo.position.z = -1;
+          sunGroup.add(sunCore, sunHalo);
+          this.sunGroup = sunGroup;
+          this.scene.add(this.sunGroup);
+
+          // Animated Tropical Ocean Surface (Subdivided Plane with Real Vertex Waves + Specular Clearcoat)
+          const waterGeo = new THREE.PlaneGeometry(1800, 1800, 48, 48);
+          waterGeo.rotateX(-Math.PI / 2);
+          this.waterBasePos = Float32Array.from(waterGeo.attributes.position.array);
+
+          this.waterMat = new THREE.MeshPhysicalMaterial({
+            color: 0x06b6d4,
+            emissive: 0x083344,
+            emissiveIntensity: 0.45,
+            roughness: 0.16,
+            metalness: 0.65,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.12,
+            envMap: envMap,
+            envMapIntensity: 1.35,
+            flatShading: false,
+          });
+
+          this.waterMesh = new THREE.Mesh(waterGeo, this.waterMat);
+          this.waterMesh.position.y = this.waterY;
+          this.scene.add(this.waterMesh);
+
+          // Shallow Turquoise Reef Underlayer for Depth Contrast
+          const reefGeo = new THREE.PlaneGeometry(1800, 1800, 1, 1);
+          reefGeo.rotateX(-Math.PI / 2);
+          this.reefMesh = new THREE.Mesh(
+            reefGeo,
+            new THREE.MeshBasicMaterial({ color: 0x0e7490 })
+          );
+          this.reefMesh.position.y = this.waterY - 2.2;
+          this.scene.add(this.reefMesh);
+
+          // Coastal Islands, Pastel Art-Deco Towers, Palms & Yachts
+          this.islands = [
+            { x: -175, zOff: -130, r: 54, h: 30, towerH: 46, color: 0xf472b6 },
+            { x: 190, zOff: -265, r: 68, h: 38, towerH: 64, color: 0x38bdf8 },
+            { x: -215, zOff: -420, r: 78, h: 44, towerH: 72, color: 0xfacc15 },
+            { x: 185, zOff: -570, r: 62, h: 35, towerH: 52, color: 0xc084fc },
+            { x: -165, zOff: -720, r: 70, h: 40, towerH: 58, color: 0x34d399 },
+            { x: 220, zOff: -860, r: 76, h: 44, towerH: 68, color: 0xfb7185 },
+          ];
+          const count = this.islands.length;
+
+          // Island Peaks
+          this.islandPeaks = new THREE.InstancedMesh(
+            new THREE.ConeGeometry(1, 1, 10),
+            new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.85, flatShading: true }),
+            count
+          );
+
+          // Sandy Beach Rings
+          const beachGeo = new THREE.CylinderGeometry(1.04, 1.18, 2.2, 16);
+          this.islandBeaches = new THREE.InstancedMesh(
+            beachGeo,
+            new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 }),
+            count
+          );
+
+          // Art-Deco Pastel Skyline Towers
+          this.islandTowers = new THREE.InstancedMesh(
+            new THREE.BoxGeometry(15, 1, 15),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.45 }),
+            count
+          );
+          for (let i = 0; i < count; i++) {
+            _scratchColor.setHex(this.islands[i].color);
+            this.islandTowers.setColorAt(i, _scratchColor);
           }
 
-          // Edge rumble strips (Red/White or Cyan/Amber)
-          for (let y = 0; y < 512; y += 32) {
-            ctx.fillStyle = (y % 64 === 0) ? "#ff3366" : "#f8fafc";
-            ctx.fillRect(8, y, 18, 32);
-            ctx.fillStyle = (y % 64 === 0) ? "#00f0ff" : "#f8fafc";
-            ctx.fillRect(512 - 26, y, 18, 32);
-          }
+          // Animated Shoreline Foam Rings
+          const foamGeo = new THREE.RingGeometry(1.16, 1.42, 24);
+          foamGeo.rotateX(-Math.PI / 2);
+          this.islandFoams = new THREE.InstancedMesh(
+            foamGeo,
+            new THREE.MeshBasicMaterial({ color: 0xa5f3fc, transparent: true, opacity: 0.55 }),
+            count
+          );
 
-          // Twin glowing lane guide lines + center dashed line
-          ctx.fillStyle = isShortcut ? "rgba(250, 204, 21, 0.45)" : "rgba(56, 189, 248, 0.32)";
-          ctx.fillRect(140, 0, 6, 512);
-          ctx.fillRect(512 - 146, 0, 6, 512);
+          // Luxury White Yachts anchored in the Vice Coast bay
+          this.yachtCount = 8;
+          this.yachts = new THREE.InstancedMesh(
+            new THREE.BoxGeometry(3.2, 1.8, 11.5),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.3 }),
+            this.yachtCount
+          );
 
-          ctx.fillStyle = "#facc15";
-          for (let y = 16; y < 512; y += 64) {
-            ctx.fillRect(252, y, 8, 36);
+          this.scene.add(
+            this.islandPeaks,
+            this.islandBeaches,
+            this.islandTowers,
+            this.islandFoams,
+            this.yachts
+          );
+
+          this.update(0, 0, 0);
+        }
+
+        setTheme(theme) {
+          if (theme === 'sunset') {
+            this.skyMat.color.setHex(0xffffff);
+            this.waterMat.color.setHex(0x06b6d4);
+            this.waterMat.emissive.setHex(0x083344);
+            this.sunGroup.visible = true;
+          } else if (theme === 'neon') {
+            this.skyMat.color.setHex(0x9d4edd);
+            this.waterMat.color.setHex(0x0284c7);
+            this.waterMat.emissive.setHex(0x3b0764);
+            this.sunGroup.visible = true;
+          } else {
+            this.skyMat.color.setHex(0x7dd3fc);
+            this.waterMat.color.setHex(0x14b8a6);
+            this.waterMat.emissive.setHex(0x0369a1);
+            this.sunGroup.visible = true;
           }
         }
-        const tex = new THREE.CanvasTexture(can);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1, 8);
-        return tex;
+
+        update(playerX, playerZ, timeSec) {
+          this.waterMesh.position.set(playerX, this.waterY, playerZ - 260);
+          this.reefMesh.position.set(playerX, this.waterY - 2.2, playerZ - 260);
+          this.skyDome.position.set(playerX, 0, playerZ);
+          this.sunGroup.position.set(playerX, 42, playerZ - 640);
+
+          // Subtle real-time vertex wave undulation on the 48x48 water grid
+          const posAttr = this.waterMesh.geometry.attributes.position;
+          const arr = posAttr.array;
+          for (let i = 0; i < arr.length; i += 3) {
+            const bx = this.waterBasePos[i];
+            const bz = this.waterBasePos[i + 2];
+            arr[i + 1] =
+              Math.sin(bx * 0.045 + timeSec * 2.2) * 0.65 +
+              Math.cos(bz * 0.045 + timeSec * 1.8) * 0.65;
+          }
+          posAttr.needsUpdate = true;
+
+          const foamPulse = 1.0 + Math.sin(timeSec * 2.4) * 0.045;
+          for (let i = 0; i < this.islands.length; i++) {
+            const isl = this.islands[i];
+            const iz = playerZ + isl.zOff;
+
+            _scratchObj.position.set(isl.x, this.waterY + isl.h * 0.46, iz);
+            _scratchObj.rotation.set(0, i * 1.1, 0);
+            _scratchObj.scale.set(isl.r, isl.h, isl.r);
+            _scratchObj.updateMatrix();
+            this.islandPeaks.setMatrixAt(i, _scratchObj.matrix);
+
+            _scratchObj.position.set(isl.x, this.waterY + 0.8, iz);
+            _scratchObj.rotation.set(0, 0, 0);
+            _scratchObj.scale.set(isl.r, 1, isl.r);
+            _scratchObj.updateMatrix();
+            this.islandBeaches.setMatrixAt(i, _scratchObj.matrix);
+
+            _scratchObj.position.set(isl.x + (i % 2 === 0 ? 11 : -11), this.waterY + isl.towerH * 0.5, iz - 6);
+            _scratchObj.rotation.set(0, 0.25, 0);
+            _scratchObj.scale.set(1, isl.towerH, 1);
+            _scratchObj.updateMatrix();
+            this.islandTowers.setMatrixAt(i, _scratchObj.matrix);
+
+            _scratchObj.position.set(isl.x, this.waterY + 0.25, iz);
+            _scratchObj.rotation.set(0, 0, 0);
+            _scratchObj.scale.set(isl.r * foamPulse, 1, isl.r * foamPulse);
+            _scratchObj.updateMatrix();
+            this.islandFoams.setMatrixAt(i, _scratchObj.matrix);
+          }
+          this.islandPeaks.instanceMatrix.needsUpdate = true;
+          this.islandBeaches.instanceMatrix.needsUpdate = true;
+          this.islandTowers.instanceMatrix.needsUpdate = true;
+          this.islandFoams.instanceMatrix.needsUpdate = true;
+
+          // Bobbing Yachts in the Ocean
+          for (let y = 0; y < this.yachtCount; y++) {
+            const side = y % 2 === 0 ? -1 : 1;
+            const yx = side * (62 + (y % 3) * 34);
+            const yz = playerZ - 85 - y * 95;
+            const bob = Math.sin(timeSec * 2.5 + y) * 0.35;
+            _scratchObj.position.set(yx, this.waterY + 0.65 + bob, yz);
+            _scratchObj.rotation.set(Math.sin(timeSec * 1.8 + y) * 0.05, y * 0.6, Math.cos(timeSec * 2.1 + y) * 0.05);
+            _scratchObj.scale.set(1, 1, 1);
+            _scratchObj.updateMatrix();
+            this.yachts.setMatrixAt(y, _scratchObj.matrix);
+          }
+          this.yachts.instanceMatrix.needsUpdate = true;
+        }
       }
 
-      function createBuildingWindowTexture(accentHex) {
-        const can = document.createElement("canvas");
-        can.width = 256;
-        can.height = 512;
-        const ctx = can.getContext("2d");
-        if (ctx && ctx.fillRect) {
-          ctx.fillStyle = "#090d1a";
-          ctx.fillRect(0, 0, 256, 512);
+      // --------------------------------------------------------------------------
+      // 4. HIGH-DETAIL HERO HYPERCAR (CLEARCOAT PAINT, ACTIVE WING, NEON UNDERGLOW)
+      // --------------------------------------------------------------------------
+      function createViceHypercar(paintHex, isRival, envMap) {
+        const root = new THREE.Group();
+        const chassis = new THREE.Group();
+        root.add(chassis);
 
-          let s = 918273;
-          const rand = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+        const paintMat = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color(paintHex),
+          metalness: 0.72,
+          roughness: 0.14,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.08,
+          envMap: envMap,
+          envMapIntensity: 1.45,
+        });
 
-          for (let row = 8; row < 504; row += 16) {
-            for (let col = 12; col < 244; col += 20) {
-              const r = rand();
-              if (r > 0.38) {
-                if (r > 0.90) ctx.fillStyle = accentHex || "#00f0ff";
-                else if (r > 0.72) ctx.fillStyle = "#fde68a";
-                else ctx.fillStyle = "#38bdf8";
-                ctx.fillRect(col, row, 12, 9);
-              } else {
-                ctx.fillStyle = "#111827";
-                ctx.fillRect(col, row, 12, 9);
+        const carbonMat = new THREE.MeshStandardMaterial({
+          color: 0x0b0f19,
+          metalness: 0.55,
+          roughness: 0.38,
+        });
+
+        const glassMat = new THREE.MeshPhysicalMaterial({
+          color: 0x040711,
+          metalness: 0.9,
+          roughness: 0.05,
+          clearcoat: 1.0,
+          envMap: envMap,
+          envMapIntensity: 1.7,
+        });
+
+        // Main Sculpted Body
+        const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.52, 4.7), paintMat);
+        lowerBody.position.set(0, 0.52, 0);
+        lowerBody.castShadow = true;
+        lowerBody.receiveShadow = true;
+        chassis.add(lowerBody);
+
+        // Sloped Aerodynamic Nose Hood
+        const noseHood = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 1.55), paintMat);
+        noseHood.position.set(0, 0.76, -1.36);
+        noseHood.rotation.x = 0.09;
+        chassis.add(noseHood);
+
+        // Carbon Front Splitter & Side Skirts
+        const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.11, 0.72), carbonMat);
+        splitter.position.set(0, 0.27, -2.26);
+        const skirtL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 3.25), carbonMat);
+        skirtL.position.set(-1.11, 0.29, 0);
+        const skirtR = skirtL.clone();
+        skirtR.position.x = 1.11;
+        chassis.add(splitter, skirtL, skirtR);
+
+        // Tinted Teardrop Canopy & Roof Cap
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.48, 2.15), glassMat);
+        cabin.position.set(0, 0.98, 0.18);
+        cabin.castShadow = true;
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.08, 1.42), paintMat);
+        roof.position.set(0, 1.24, 0.24);
+        chassis.add(cabin, roof);
+
+        // Active Hydraulic Rear GT Wing
+        const wingGroup = new THREE.Group();
+        wingGroup.position.set(0, 0.88, 2.06);
+        const strutL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.44, 0.26), carbonMat);
+        strutL.position.set(-0.76, 0.14, 0);
+        const strutR = strutL.clone();
+        strutR.position.x = 0.76;
+        const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.09, 0.5), carbonMat);
+        wingBlade.position.set(0, 0.36, 0.06);
+        const endPlateL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.56), paintMat);
+        endPlateL.position.set(-1.19, 0.36, 0.06);
+        const endPlateR = endPlateL.clone();
+        endPlateR.position.x = 1.19;
+        wingGroup.add(strutL, strutR, wingBlade, endPlateL, endPlateR);
+        chassis.add(wingGroup);
+
+        // LED Headlights & Full-Width Vice Taillight Bar
+        const headMat = new THREE.MeshBasicMaterial({ color: isRival ? 0xfbbf24 : 0xe0f2fe });
+        const headL = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.1), headMat);
+        headL.position.set(-0.72, 0.6, -2.35);
+        const headR = headL.clone();
+        headR.position.x = 0.72;
+        chassis.add(headL, headR);
+
+        const tailMat = new THREE.MeshBasicMaterial({ color: isRival ? 0xf59e0b : 0xff1e56 });
+        const tailBar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.14, 0.12), tailMat);
+        tailBar.position.set(0, 0.65, 2.35);
+        chassis.add(tailBar);
+
+        // Neon Underglow Plane
+        const underglowMat = new THREE.MeshBasicMaterial({
+          color: isRival ? 0xfbbf24 : new THREE.Color(paintHex),
+          transparent: true,
+          opacity: 0.45,
+        });
+        const underglow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5.0), underglowMat);
+        underglow.rotation.x = -Math.PI / 2;
+        underglow.position.set(0, 0.05, 0);
+        root.add(underglow);
+
+        // Dual Hyper Nitro Exhaust Flames
+        const flameMat = new THREE.MeshBasicMaterial({
+          color: isRival ? 0xfbbf24 : 0x22d3ee,
+          transparent: true,
+          opacity: 0.95,
+        });
+        const flameGeo = new THREE.ConeGeometry(0.19, 1.6, 8);
+        flameGeo.rotateX(Math.PI / 2);
+        const flameL = new THREE.Mesh(flameGeo, flameMat);
+        flameL.position.set(-0.52, 0.37, 3.0);
+        flameL.visible = false;
+        const flameR = flameL.clone();
+        flameR.position.x = 0.52;
+        chassis.add(flameL, flameR);
+
+        // Spinning Spoked Alloy Wheels
+        const wheels = [];
+        const wheelGeo = new THREE.CylinderGeometry(0.43, 0.43, 0.35, 16);
+        wheelGeo.rotateZ(Math.PI / 2);
+        const tireMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.75 });
+        const spokeMat = new THREE.MeshBasicMaterial({ color: isRival ? 0xfbbf24 : 0xf472b6 });
+        const spokeGeo1 = new THREE.BoxGeometry(0.37, 0.54, 0.08);
+        const spokeGeo2 = new THREE.BoxGeometry(0.37, 0.08, 0.54);
+
+        [
+          [-1.1, 0.43, -1.44],
+          [1.1, 0.43, -1.44],
+          [-1.1, 0.43, 1.44],
+          [1.1, 0.43, 1.44],
+        ].forEach(([wx, wy, wz]) => {
+          const pivot = new THREE.Group();
+          pivot.position.set(wx, wy, wz);
+          const spinHub = new THREE.Group();
+          const tire = new THREE.Mesh(wheelGeo, tireMat);
+          tire.castShadow = true;
+          const s1 = new THREE.Mesh(spokeGeo1, spokeMat);
+          const s2 = new THREE.Mesh(spokeGeo2, spokeMat);
+          spinHub.add(tire, s1, s2);
+          pivot.add(spinHub);
+          root.add(pivot);
+          wheels.push({ pivot, spinHub });
+        });
+
+        return {
+          root,
+          chassis,
+          paintMat,
+          tailMat,
+          underglowMat,
+          wingGroup,
+          wingBlade,
+          wheels,
+          flames: [flameL, flameR],
+        };
+      }
+
+      // --------------------------------------------------------------------------
+      // 5. MODULAR SEA STUNT PARKOUR TRACK MANAGER
+      // --------------------------------------------------------------------------
+      class ViceParkourTrack {
+        constructor(scene, envMap) {
+          this.scene = scene;
+          this.segments = [];
+          this.nextZ = 20;
+          this.segmentIndex = 0;
+
+          this.orangeMat = new THREE.MeshStandardMaterial({
+            color: 0xf97316,
+            roughness: 0.25,
+            metalness: 0.35,
+            envMap: envMap,
+          });
+          this.cyanMat = new THREE.MeshStandardMaterial({
+            color: 0x0284c7,
+            roughness: 0.24,
+            metalness: 0.38,
+            envMap: envMap,
+          });
+          this.magentaMat = new THREE.MeshStandardMaterial({
+            color: 0xdb2777,
+            roughness: 0.25,
+            metalness: 0.35,
+            envMap: envMap,
+          });
+          this.yellowMat = new THREE.MeshStandardMaterial({
+            color: 0xeab308,
+            roughness: 0.26,
+            metalness: 0.32,
+          });
+          this.cyanTrimMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+          this.pinkTrimMat = new THREE.MeshBasicMaterial({ color: 0xf472b6 });
+          this.steelMat = new THREE.MeshStandardMaterial({
+            color: 0x0f172a,
+            metalness: 0.78,
+            roughness: 0.28,
+          });
+          this.rampMat = new THREE.MeshStandardMaterial({
+            color: 0xfacc15,
+            emissive: 0xa16207,
+            roughness: 0.22,
+          });
+          this.boostMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+          this.orbMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+          // Instanced Track Ribs & Collectible Vice Orbs
+          this.ribInstanced = new THREE.InstancedMesh(
+            new THREE.BoxGeometry(1, 0.14, 0.55),
+            this.cyanTrimMat,
+            160
+          );
+          this.ribInstanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+          this.scene.add(this.ribInstanced);
+
+          this.orbInstanced = new THREE.InstancedMesh(
+            new THREE.OctahedronGeometry(1.0, 0),
+            this.orbMat,
+            72
+          );
+          this.orbInstanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+          this.scene.add(this.orbInstanced);
+
+          this.reset();
+        }
+
+        reset() {
+          for (const seg of this.segments) {
+            this.scene.remove(seg.group);
+            seg.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+          }
+          this.segments = [];
+          this.nextZ = 20;
+          this.segmentIndex = 0;
+
+          for (let i = 0; i < 8; i++) {
+            this.spawnNextSegment();
+          }
+          this.syncInstances(0);
+        }
+
+        spawnNextSegment() {
+          const idx = this.segmentIndex++;
+          const group = new THREE.Group();
+
+          const pool = ['STUNT_STRAIGHT', 'CONTAINER_BRIDGE', 'SKY_PIPE_DUO', 'NEON_PLATFORM'];
+          const moduleType = idx === 0 ? 'START_DECK' : pool[(idx + Math.floor(Math.random() * 2)) % pool.length];
+
+          const prev = this.segments[this.segments.length - 1];
+          const prevY = prev ? prev.topY : 4;
+          const prevX = prev ? prev.xCenter : 0;
+
+          let width = 19.0;
+          let length = 94;
+          let xOffset = idx === 0 ? 0 : THREE.MathUtils.clamp(prevX + THREE.MathUtils.randFloat(-5.5, 5.5), -16, 16);
+          let topY = idx === 0 ? 4 : THREE.MathUtils.clamp(prevY + THREE.MathUtils.randFloat(-2.2, 2.6), -3, 22);
+          let gap = idx === 0 ? 0 : THREE.MathUtils.randFloat(30, 44);
+
+          if (moduleType === 'START_DECK') {
+            width = 23;
+            length = 120;
+            xOffset = 0;
+            topY = 4;
+          } else if (moduleType === 'CONTAINER_BRIDGE') {
+            width = 13.0;
+            length = 86;
+            gap = THREE.MathUtils.randFloat(28, 40);
+          } else if (moduleType === 'SKY_PIPE_DUO') {
+            width = 14.8;
+            length = 82;
+            gap = THREE.MathUtils.randFloat(30, 42);
+          }
+
+          const zStart = this.nextZ - gap;
+          const zEnd = zStart - length;
+          const zCenter = (zStart + zEnd) * 0.5;
+          const ribList = [];
+
+          if (moduleType === 'START_DECK' || moduleType === 'STUNT_STRAIGHT' || moduleType === 'NEON_PLATFORM') {
+            const deckMat =
+              moduleType === 'NEON_PLATFORM'
+                ? this.cyanMat
+                : idx % 2 === 0
+                ? this.orangeMat
+                : this.magentaMat;
+
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(width, 1.4, length), deckMat);
+            deck.position.set(xOffset, topY - 0.7, zCenter);
+            deck.receiveShadow = true;
+            group.add(deck);
+
+            const curbGeo = new THREE.BoxGeometry(0.7, 0.44, length);
+            const leftCurb = new THREE.Mesh(curbGeo, this.cyanTrimMat);
+            leftCurb.position.set(xOffset - width * 0.5 + 0.35, topY + 0.18, zCenter);
+            const rightCurb = new THREE.Mesh(curbGeo, this.pinkTrimMat);
+            rightCurb.position.set(xOffset + width * 0.5 - 0.35, topY + 0.18, zCenter);
+            group.add(leftCurb, rightCurb);
+
+            for (let rz = zStart - 8; rz > zEnd + 16; rz -= 16) {
+              ribList.push({ x: xOffset, y: topY + 0.04, z: rz, w: width - 2.2 });
+            }
+          } else if (moduleType === 'CONTAINER_BRIDGE') {
+            const subDeck = new THREE.Mesh(new THREE.BoxGeometry(width + 0.6, 0.7, length), this.steelMat);
+            subDeck.position.set(xOffset, topY - 0.35, zCenter);
+            group.add(subDeck);
+
+            const contLen = (length - 4) / 3;
+            const cMats = [this.cyanMat, this.orangeMat, this.yellowMat];
+            for (let c = 0; c < 3; c++) {
+              const cz = zStart - 2 - contLen * (c + 0.5);
+              const container = new THREE.Mesh(new THREE.BoxGeometry(width - 0.6, 3.2, contLen - 0.8), cMats[c % 3]);
+              container.position.set(xOffset, topY - 1.6, cz);
+              container.receiveShadow = true;
+              group.add(container);
+            }
+          } else if (moduleType === 'SKY_PIPE_DUO') {
+            const pipeGeo = new THREE.CylinderGeometry(2.6, 2.6, length, 16);
+            pipeGeo.rotateX(Math.PI / 2);
+
+            const pipeL = new THREE.Mesh(pipeGeo, this.cyanMat);
+            pipeL.position.set(xOffset - 3.7, topY - 2.2, zCenter);
+            const pipeR = new THREE.Mesh(pipeGeo, this.magentaMat);
+            pipeR.position.set(xOffset + 3.7, topY - 2.2, zCenter);
+            const crossTie = new THREE.Mesh(new THREE.BoxGeometry(width, 0.55, length - 2), this.steelMat);
+            crossTie.position.set(xOffset, topY - 0.35, zCenter);
+            group.add(pipeL, pipeR, crossTie);
+          }
+
+          // Ocean Support Pylons
+          const pylonHeight = topY + 26;
+          if (pylonHeight > 2) {
+            const pylonGeo = new THREE.CylinderGeometry(0.65, 0.85, pylonHeight, 8);
+            const p1 = new THREE.Mesh(pylonGeo, this.steelMat);
+            p1.position.set(xOffset - width * 0.36, -26 + pylonHeight * 0.5, zStart - 10);
+            const p2 = new THREE.Mesh(pylonGeo, this.steelMat);
+            p2.position.set(xOffset + width * 0.36, -26 + pylonHeight * 0.5, zEnd + 10);
+            group.add(p1, p2);
+          }
+
+          // Glowing Checkpoint Arch
+          const isCheckpoint = idx === 0 || idx % 2 === 0;
+          if (isCheckpoint) {
+            const pillarH = 7.6;
+            const pillarGeo = new THREE.BoxGeometry(0.88, pillarH, 0.88);
+            const pLeft = new THREE.Mesh(pillarGeo, this.pinkTrimMat);
+            pLeft.position.set(xOffset - width * 0.45, topY + pillarH * 0.5, zStart - 7);
+            const pRight = new THREE.Mesh(pillarGeo, this.cyanTrimMat);
+            pRight.position.set(xOffset + width * 0.45, topY + pillarH * 0.5, zStart - 7);
+            const topBeam = new THREE.Mesh(new THREE.BoxGeometry(width * 0.96, 0.95, 0.95), this.boostMat);
+            topBeam.position.set(xOffset, topY + pillarH, zStart - 7);
+            group.add(pLeft, pRight, topBeam);
+          }
+
+          // Mega Launch Ramp at Segment Exit
+          const rampLength = 16.0;
+          const rampHeight = 2.4;
+          const rampZStart = zEnd + rampLength;
+          const rampZEnd = zEnd;
+          const rampSlopeLen = Math.hypot(rampLength, rampHeight);
+          const rampAngle = Math.atan2(rampHeight, rampLength);
+
+          const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(width * 0.86, 0.5, rampSlopeLen), this.rampMat);
+          rampMesh.position.set(xOffset, topY + rampHeight * 0.5 - 0.15, (rampZStart + rampZEnd) * 0.5);
+          rampMesh.rotation.x = rampAngle;
+          group.add(rampMesh);
+
+          // Turbo Chevron Boost Pads
+          const boostPads = [];
+          if (idx % 2 === 1 || idx === 0) {
+            const padX = xOffset + (idx % 3 === 1 ? -2.6 : idx % 3 === 2 ? 2.6 : 0);
+            const padZ = zCenter + 4;
+            const padMesh = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 9.0), this.boostMat);
+            padMesh.position.set(padX, topY + 0.08, padZ);
+            group.add(padMesh);
+            boostPads.push({ x: padX, z: padZ, w: 3.6, l: 9.0 });
+          }
+
+          // Collectible Vice Orbs
+          const orbs = [];
+          if (idx > 0) {
+            const laneX = xOffset + THREE.MathUtils.randFloat(-width * 0.24, width * 0.24);
+            for (let o = 0; o < 3; o++) {
+              orbs.push({
+                x: laneX,
+                y: topY + 1.5,
+                z: zCenter - o * 6.5,
+                collected: false,
+              });
+            }
+          }
+
+          this.scene.add(group);
+          this.segments.push({
+            id: idx,
+            group,
+            xCenter: xOffset,
+            width,
+            topY,
+            zStart,
+            zEnd,
+            rampZStart,
+            rampZEnd,
+            rampHeight,
+            boostPads,
+            orbs,
+            ribList,
+            isCheckpoint,
+            checkpointClaimed: idx === 0,
+          });
+
+          this.nextZ = zEnd;
+        }
+
+        syncInstances(timeSec) {
+          let ribIdx = 0;
+          let orbIdx = 0;
+
+          for (let s = 0; s < this.segments.length; s++) {
+            const seg = this.segments[s];
+            for (let r = 0; r < seg.ribList.length; r++) {
+              if (ribIdx >= 160) break;
+              const rib = seg.ribList[r];
+              _scratchObj.position.set(rib.x, rib.y, rib.z);
+              _scratchObj.rotation.set(0, 0, 0);
+              _scratchObj.scale.set(rib.w, 1, 1);
+              _scratchObj.updateMatrix();
+              this.ribInstanced.setMatrixAt(ribIdx++, _scratchObj.matrix);
+            }
+
+            for (let o = 0; o < seg.orbs.length; o++) {
+              if (orbIdx >= 72) break;
+              const orb = seg.orbs[o];
+              if (orb.collected) continue;
+              _scratchObj.position.set(orb.x, orb.y + Math.sin(timeSec * 4.5 + orb.z * 0.2) * 0.25, orb.z);
+              _scratchObj.rotation.set(0, timeSec * 2.8, 0);
+              _scratchObj.scale.set(1, 1, 1);
+              _scratchObj.updateMatrix();
+              this.orbInstanced.setMatrixAt(orbIdx++, _scratchObj.matrix);
+            }
+          }
+
+          this.ribInstanced.count = ribIdx;
+          this.ribInstanced.instanceMatrix.needsUpdate = true;
+
+          this.orbInstanced.count = orbIdx;
+          this.orbInstanced.instanceMatrix.needsUpdate = true;
+        }
+
+        getSurfaceAt(x, z) {
+          for (let i = 0; i < this.segments.length; i++) {
+            const seg = this.segments[i];
+            if (z <= seg.zStart + 1.2 && z >= seg.zEnd - 1.2) {
+              const halfW = seg.width * 0.5 + 0.6;
+              if (Math.abs(x - seg.xCenter) <= halfW) {
+                let groundY = seg.topY;
+                let onRamp = false;
+                if (z <= seg.rampZStart && z >= seg.rampZEnd) {
+                  const t = (seg.rampZStart - z) / (seg.rampZStart - seg.rampZEnd);
+                  groundY += THREE.MathUtils.clamp(t, 0, 1) * seg.rampHeight;
+                  onRamp = true;
+                }
+                return { seg, groundY, onRamp };
               }
             }
           }
-        }
-        const tex = new THREE.CanvasTexture(can);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1, 2);
-        return tex;
-      }
-
-      // --- Track Layout Definition: Closed Elevated Rooftop Circuit ---
-      const TRACK_SEGMENTS = [
-        // Seg 0: Start/Finish Grand Rooftop Straight (with barriers)
-        { x: 0, y: 0, z: -55, w: 22, l: 130, pitch: 0, yaw: 0, barriers: true, type: "normal" },
-        // Seg 1: Launch Ramp 1 up to Skybridge (starts at z=-120 matching Seg 0 height)
-        { x: 0, y: 4.8, z: -138, w: 22, l: 36, pitch: 0.24, yaw: 0, barriers: false, type: "ramp", boostPad: true },
-        // Seg 2: Mid-Air Gap (-156 to -182 is open rooftop chasm!) -> Landing Deck
-        { x: 0, y: 6.5, z: -245, w: 24, l: 126, pitch: 0, yaw: 0, barriers: true, type: "normal" },
-        // Seg 3: East Corner Banked Deck
-        { x: 65, y: 8.0, z: -295, w: 150, l: 24, pitch: 0, yaw: 0, barriers: true, type: "normal" },
-        // Seg 4: High-Speed East Skyway (heading +Z)
-        { x: 130, y: 8.0, z: -195, w: 22, l: 185, pitch: 0, yaw: 0, barriers: true, type: "normal", boostPad: true },
-        // Seg 5: Risky Shortcut Narrow Steel Bridge (cuts inside from East Skyway)
-        { x: 95, y: 9.5, z: -65, w: 10, l: 85, pitch: 0.06, yaw: 0.35, barriers: false, type: "shortcut", boostPad: true },
-        // Seg 6: Main East Lowering Deck (heading +Z to South Turn)
-        { x: 130, y: 4.0, z: -40, w: 22, l: 130, pitch: 0, yaw: 0, barriers: true, type: "normal" },
-        // Seg 7: South Helipad Cross-Deck (heading -X back toward main straight)
-        { x: 65, y: 2.0, z: 20, w: 155, l: 24, pitch: 0, yaw: 0, barriers: true, type: "normal" }
-      ];
-
-      // Ordered Checkpoints around the circuit (index 9 is the Finish Line on Seg 0)
-      const CHECKPOINTS = [
-        { idx: 0, x: 0, y: 1.0, z: -20, yaw: 0, radius: 16 },
-        { idx: 1, x: 0, y: 1.0, z: -95, yaw: 0, radius: 16 },
-        { idx: 2, x: 0, y: 7.5, z: -138, yaw: 0, radius: 16 },
-        { idx: 3, x: 0, y: 7.5, z: -200, yaw: 0, radius: 18 },
-        { idx: 4, x: 0, y: 9.0, z: -288, yaw: -Math.PI / 2, radius: 18 },
-        { idx: 5, x: 125, y: 9.0, z: -288, yaw: Math.PI, radius: 18 },
-        { idx: 6, x: 130, y: 9.0, z: -180, yaw: Math.PI, radius: 18 },
-        { idx: 7, x: 130, y: 5.0, z: -60, yaw: Math.PI, radius: 22 },
-        { idx: 8, x: 65, y: 3.0, z: 20, yaw: Math.PI / 2, radius: 20 },
-        { idx: 9, x: 0, y: 1.0, z: 5, yaw: 0, radius: 18, isFinish: true }
-      ];
-
-      // Boost Pads placed on the rooftop decks
-      const BOOST_PADS = [
-        { x: 0, y: 0.65, z: -70, yaw: 0 },
-        { x: 0, y: 5.1, z: -138, yaw: 0 },
-        { x: 55, y: 8.65, z: -295, yaw: -Math.PI / 2 },
-        { x: 130, y: 8.65, z: -210, yaw: Math.PI },
-        { x: 95, y: 10.15, z: -65, yaw: Math.PI - 0.35 },
-        { x: 45, y: 2.65, z: 20, yaw: Math.PI / 2 }
-      ];
-
-      // Obstacles (Neon Pylons / HVAC Rooftop Units) positioned with clean lane clearance
-      const OBSTACLES = [
-        { x: -7.5, y: 1.8, z: -55, w: 2.6, h: 2.8, d: 2.6 },
-        { x: 7.5, y: 8.3, z: -235, w: 2.8, h: 2.8, d: 2.8 },
-        { x: 123.5, y: 9.8, z: -150, w: 2.6, h: 2.8, d: 2.6 },
-        { x: 136.5, y: 5.8, z: -30, w: 2.6, h: 2.8, d: 2.6 }
-      ];
-
-      // --- Three.js Scene & Tone-Mapped WebGL Renderer Initialization ---
-      const container = document.getElementById("game-canvas-container");
-      let renderer = null;
-      try {
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-      } catch (err) {
-        const banner = document.getElementById("webgl-error-banner");
-        if (banner) banner.classList.remove("hidden");
-        return;
-      }
-
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      if (THREE.ACESFilmicToneMapping !== undefined) {
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
-      }
-      if (THREE.sRGBEncoding !== undefined) {
-        renderer.outputEncoding = THREE.sRGBEncoding;
-      }
-      container.appendChild(renderer.domElement);
-
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x090d24);
-      scene.fog = new THREE.FogExp2(0x161233, 0.0017);
-
-      const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.5, 1150);
-
-      // Cinematic Sunset / Blue-Hour Lighting Setup
-      const ambientLight = new THREE.HemisphereLight(0x818cf8, 0x1e1b4b, 0.92);
-      scene.add(ambientLight);
-
-      const sunLight = new THREE.DirectionalLight(0xffb480, 1.45);
-      sunLight.position.set(-110, 160, -280);
-      sunLight.castShadow = true;
-      sunLight.shadow.mapSize.width = 1024;
-      sunLight.shadow.mapSize.height = 1024;
-      sunLight.shadow.camera.near = 10;
-      sunLight.shadow.camera.far = 520;
-      const d = 190;
-      sunLight.shadow.camera.left = -d;
-      sunLight.shadow.camera.right = d;
-      sunLight.shadow.camera.top = d;
-      sunLight.shadow.camera.bottom = -d;
-      scene.add(sunLight);
-
-      // Groups for Rooftop Race vs Car-Soccer Arena
-      const worldGroup = new THREE.Group();
-      const raceTrackGroup = new THREE.Group();
-      const soccerArenaGroup = new THREE.Group();
-      soccerArenaGroup.visible = false;
-      scene.add(worldGroup);
-      scene.add(raceTrackGroup);
-      scene.add(soccerArenaGroup);
-
-      // --- Sunset / Blue-Hour Gradient Sky Dome ---
-      function buildSunsetSkyDome() {
-        const skyGeo = new THREE.SphereGeometry(900, 24, 16);
-        const can = document.createElement("canvas");
-        can.width = 64;
-        can.height = 256;
-        const ctx = can.getContext("2d");
-        if (ctx && ctx.createLinearGradient) {
-          const grad = ctx.createLinearGradient(0, 0, 0, 256);
-          grad.addColorStop(0.0, "#050816");
-          grad.addColorStop(0.38, "#131638");
-          grad.addColorStop(0.56, "#4c1d95");
-          grad.addColorStop(0.68, "#be185d");
-          grad.addColorStop(0.76, "#fb923c");
-          grad.addColorStop(0.84, "#1e1b4b");
-          grad.addColorStop(1.0, "#040611");
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, 64, 256);
-        }
-        const skyTex = new THREE.CanvasTexture(can);
-        const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false });
-        const skyDome = new THREE.Mesh(skyGeo, skyMat);
-        worldGroup.add(skyDome);
-
-        // Glowing Synthwave Setting Sun Disc on the North-West Horizon
-        const sunDiscGeo = new THREE.CircleGeometry(78, 32);
-        const sunDiscMat = new THREE.MeshBasicMaterial({ color: 0xff6b8b, fog: false });
-        const sunDisc = new THREE.Mesh(sunDiscGeo, sunDiscMat);
-        sunDisc.position.set(-180, 95, -680);
-        sunDisc.lookAt(0, 10, 0);
-        worldGroup.add(sunDisc);
-      }
-
-      // --- Build High-Detail Futuristic City Skyline with Varied Silhouettes & Cranes ---
-      const animatedTrafficLights = [];
-      const floatingGuideArrows = [];
-
-      function buildCitySkyline() {
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        const cylGeo = new THREE.CylinderGeometry(0.5, 0.5, 1, 12);
-        const coneGeo = new THREE.ConeGeometry(0.7, 1, 4);
-
-        const winTexCyan = createBuildingWindowTexture("#00f0ff");
-        const winTexPink = createBuildingWindowTexture("#ff3366");
-
-        const bldgMat1 = new THREE.MeshStandardMaterial({
-          color: 0xffffff, map: winTexCyan, roughness: 0.35, metalness: 0.45
-        });
-        const bldgMat2 = new THREE.MeshStandardMaterial({
-          color: 0xffffff, map: winTexPink, roughness: 0.38, metalness: 0.40
-        });
-        const darkMetalMat = new THREE.MeshStandardMaterial({
-          color: 0x0f172a, roughness: 0.4, metalness: 0.7
-        });
-        const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const neonPinkMat = new THREE.MeshBasicMaterial({ color: 0xff3366 });
-        const neonAmberMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-
-        let seed = 42026;
-        function rand() {
-          seed = (seed * 1664525 + 1013904223) % 4294967296;
-          return seed / 4294967296;
+          return null;
         }
 
-        for (let gx = -240; gx <= 360; gx += 46) {
-          for (let gz = -440; gz <= 160; gz += 46) {
-            const nearWest = Math.abs(gx - 0) < 34 && gz > -325 && gz < 45;
-            const nearEast = Math.abs(gx - 130) < 36 && gz > -325 && gz < 45;
-            const nearNorth = gx > -25 && gx < 155 && Math.abs(gz + 295) < 34;
-            const nearSouth = gx > -25 && gx < 155 && Math.abs(gz - 20) < 34;
-            const nearShortcut = gx > 65 && gx < 125 && gz > -120 && gz < -15;
-            if (nearWest || nearEast || nearNorth || nearSouth || nearShortcut) continue;
-
-            const w = 22 + rand() * 16;
-            const d = 22 + rand() * 16;
-            const h = 55 + rand() * 125;
-            const bx = gx + (rand() - 0.5) * 9;
-            const bz = gz + (rand() - 0.5) * 9;
-            const by = -98 + h * 0.5;
-            const topY = -98 + h;
-
-            const matChoice = rand() > 0.45 ? bldgMat1 : bldgMat2;
-            const archStyle = Math.floor(rand() * 4);
-
-            // Base tower
-            const tower = new THREE.Mesh(boxGeo, matChoice);
-            tower.scale.set(w, h, d);
-            tower.position.set(bx, by, bz);
-            worldGroup.add(tower);
-
-            // Architectural Silhouette Variations
-            if (archStyle === 0) {
-              // Stepped Art-Deco / Cyber Spire
-              const tier2 = new THREE.Mesh(boxGeo, matChoice);
-              tier2.scale.set(w * 0.68, 16, d * 0.68);
-              tier2.position.set(bx, topY + 8, bz);
-              worldGroup.add(tier2);
-
-              const spire = new THREE.Mesh(cylGeo, neonCyanMat);
-              spire.scale.set(0.7, 22, 0.7);
-              spire.position.set(bx, topY + 25, bz);
-              worldGroup.add(spire);
-            } else if (archStyle === 1) {
-              // Cylindrical Glass Core + Helipad Crown
-              const crown = new THREE.Mesh(cylGeo, darkMetalMat);
-              crown.scale.set(w * 0.75, 10, d * 0.75);
-              crown.position.set(bx, topY + 5, bz);
-              worldGroup.add(crown);
-
-              const ring = new THREE.Mesh(cylGeo, neonPinkMat);
-              ring.scale.set(w * 0.78, 0.8, d * 0.78);
-              ring.position.set(bx, topY + 10.2, bz);
-              worldGroup.add(ring);
-            } else if (archStyle === 2) {
-              // Pyramid / Slanted Roof + Glowing Billboard Sign
-              const roof = new THREE.Mesh(coneGeo, darkMetalMat);
-              roof.scale.set(w * 0.7, 14, d * 0.7);
-              roof.rotation.y = Math.PI / 4;
-              roof.position.set(bx, topY + 7, bz);
-              worldGroup.add(roof);
-            } else {
-              // Twin HVAC Penthouse + Neon Sky-Sign
-              const signMat = rand() > 0.5 ? neonCyanMat : (rand() > 0.5 ? neonPinkMat : neonAmberMat);
-              const billboard = new THREE.Mesh(boxGeo, signMat);
-              billboard.scale.set(w * 0.82, 4.2, 0.8);
-              billboard.position.set(bx, topY + 2.8, bz + d * 0.5);
-              worldGroup.add(billboard);
-            }
-
-            // Neon Roof Trim Strip
-            const trim = new THREE.Mesh(boxGeo, rand() > 0.5 ? neonCyanMat : neonPinkMat);
-            trim.scale.set(w + 0.5, 0.65, d + 0.5);
-            trim.position.set(bx, topY, bz);
-            worldGroup.add(trim);
+        update(playerZ, timeSec) {
+          while (this.nextZ > playerZ - 660) {
+            this.spawnNextSegment();
           }
-        }
-
-        // Construction Cranes & Support Towers near Chasm & Corners
-        const craneCoords = [
-          { x: -24, y: 0, z: -165, yaw: 0.4 },
-          { x: 158, y: 0, z: -250, yaw: -0.8 },
-          { x: 60, y: 0, z: -130, yaw: 1.1 }
-        ];
-        craneCoords.forEach((c) => {
-          const craneGroup = new THREE.Group();
-          craneGroup.position.set(c.x, c.y, c.z);
-          craneGroup.rotation.y = c.yaw;
-
-          const mast = new THREE.Mesh(boxGeo, neonAmberMat);
-          mast.scale.set(2.2, 65, 2.2);
-          mast.position.set(0, 12, 0);
-          craneGroup.add(mast);
-
-          const jib = new THREE.Mesh(boxGeo, neonAmberMat);
-          jib.scale.set(2.0, 1.8, 46);
-          jib.position.set(0, 44, -14);
-          craneGroup.add(jib);
-
-          const beacon = new THREE.Mesh(boxGeo, neonPinkMat);
-          beacon.scale.set(1.5, 1.5, 1.5);
-          beacon.position.set(0, 45.5, -36);
-          craneGroup.add(beacon);
-
-          worldGroup.add(craneGroup);
-        });
-
-        // Distant Animated Traffic Light Streams in the City Canyon Below
-        for (let i = 0; i < 42; i++) {
-          const isRed = i % 2 === 0;
-          const streak = new THREE.Mesh(boxGeo, isRed ? neonPinkMat : neonAmberMat);
-          streak.scale.set(0.9, 0.5, 5.5);
-          const laneX = (i % 3 === 0) ? -42 : ((i % 3 === 1) ? 62 : 172);
-          streak.position.set(laneX + (isRed ? -2.5 : 2.5), -32, -380 + (i * 14));
-          worldGroup.add(streak);
-          animatedTrafficLights.push({ mesh: streak, speed: isRed ? 42 : -42 });
-        }
-      }
-
-      // --- Build High-Contrast Rooftop Race Course with Chevrons & Landmarks ---
-      function buildRaceCourse() {
-        const roadTex = createRoadTexture(false);
-        const shortcutTex = createRoadTexture(true);
-
-        const deckMat = new THREE.MeshStandardMaterial({
-          color: 0xffffff, map: roadTex, roughness: 0.55, metalness: 0.25
-        });
-        const shortcutMat = new THREE.MeshStandardMaterial({
-          color: 0xffffff, map: shortcutTex, roughness: 0.4, metalness: 0.45
-        });
-        const underDeckMat = new THREE.MeshStandardMaterial({
-          color: 0x0f172a, roughness: 0.7, metalness: 0.5
-        });
-        const railMatPink = new THREE.MeshBasicMaterial({ color: 0xff3366 });
-        const railMatCyan = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const railMatAmber = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-
-        TRACK_SEGMENTS.forEach((seg) => {
-          const group = new THREE.Group();
-          group.position.set(seg.x, seg.y, seg.z);
-          group.rotation.order = "YXZ";
-          group.rotation.y = seg.yaw || 0;
-          group.rotation.x = seg.pitch || 0;
-
-          // Textured road surface
-          const deck = new THREE.Mesh(boxGeo, seg.type === "shortcut" ? shortcutMat : deckMat);
-          deck.scale.set(seg.w, 1.2, seg.l);
-          deck.receiveShadow = true;
-          group.add(deck);
-
-          // Steel girder under-structure for depth & verticality
-          const girder = new THREE.Mesh(boxGeo, underDeckMat);
-          girder.scale.set(seg.w * 0.86, 3.2, seg.l * 0.98);
-          girder.position.set(0, -2.1, 0);
-          group.add(girder);
-
-          // Support pillars descending into the city below
-          for (let pz = -seg.l * 0.35; pz <= seg.l * 0.35; pz += 55) {
-            const pillar = new THREE.Mesh(boxGeo, underDeckMat);
-            pillar.scale.set(3.2, 65, 3.2);
-            pillar.position.set(0, -34, pz);
-            group.add(pillar);
+          while (this.segments.length > 0 && this.segments[0].zEnd > playerZ + 110) {
+            const old = this.segments.shift();
+            this.scene.remove(old.group);
+            old.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
           }
-
-          // Neon edge strips
-          const leftStrip = new THREE.Mesh(boxGeo, seg.type === "ramp" ? railMatAmber : railMatCyan);
-          leftStrip.scale.set(0.48, 1.4, seg.l);
-          leftStrip.position.set(-seg.w * 0.5, 0.22, 0);
-          group.add(leftStrip);
-
-          const rightStrip = new THREE.Mesh(boxGeo, seg.type === "ramp" ? railMatAmber : railMatPink);
-          rightStrip.scale.set(0.48, 1.4, seg.l);
-          rightStrip.position.set(seg.w * 0.5, 0.22, 0);
-          group.add(rightStrip);
-
-          // Concrete + Neon Side Barriers where enabled
-          if (seg.barriers) {
-            const wallL = new THREE.Mesh(boxGeo, underDeckMat);
-            wallL.scale.set(0.85, 2.2, seg.l);
-            wallL.position.set(-seg.w * 0.5 + 0.4, 1.1, 0);
-            group.add(wallL);
-
-            const topGlowL = new THREE.Mesh(boxGeo, railMatCyan);
-            topGlowL.scale.set(0.9, 0.22, seg.l);
-            topGlowL.position.set(-seg.w * 0.5 + 0.4, 2.25, 0);
-            group.add(topGlowL);
-
-            const wallR = new THREE.Mesh(boxGeo, underDeckMat);
-            wallR.scale.set(0.85, 2.2, seg.l);
-            wallR.position.set(seg.w * 0.5 - 0.4, 1.1, 0);
-            group.add(wallR);
-
-            const topGlowR = new THREE.Mesh(boxGeo, railMatPink);
-            topGlowR.scale.set(0.9, 0.22, seg.l);
-            topGlowR.position.set(seg.w * 0.5 - 0.4, 2.25, 0);
-            group.add(topGlowR);
-          }
-
-          raceTrackGroup.add(group);
-        });
-
-        // Glowing Boost Pads with Directional Chevron Strips
-        const padMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const padInnerMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-        BOOST_PADS.forEach((pad) => {
-          const padGroup = new THREE.Group();
-          padGroup.position.set(pad.x, pad.y, pad.z);
-          padGroup.rotation.y = pad.yaw || 0;
-
-          const base = new THREE.Mesh(boxGeo, padMat);
-          base.scale.set(4.8, 0.22, 7.0);
-          padGroup.add(base);
-
-          const chev = new THREE.Mesh(boxGeo, padInnerMat);
-          chev.scale.set(3.2, 0.28, 2.2);
-          chev.position.set(0, 0.04, -1.2);
-          padGroup.add(chev);
-
-          raceTrackGroup.add(padGroup);
-        });
-
-        // Rooftop Obstacles (Illuminated Hazard Blocks)
-        const obsMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.28, metalness: 0.4 });
-        OBSTACLES.forEach((obs) => {
-          const m = new THREE.Mesh(boxGeo, obsMat);
-          m.scale.set(obs.w, obs.h, obs.d);
-          m.position.set(obs.x, obs.y, obs.z);
-          m.castShadow = true;
-          raceTrackGroup.add(m);
-        });
-
-        // Checkpoints, Finish Arch & Floating Guidance Arrows
-        const gateMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-        const finishMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-        const arrowGeo = new THREE.ConeGeometry(1.1, 2.6, 4);
-        arrowGeo.rotateX(-Math.PI / 2);
-
-        CHECKPOINTS.forEach((cp) => {
-          const arch = new THREE.Group();
-          arch.position.set(cp.x, cp.y, cp.z);
-          arch.rotation.y = cp.yaw;
-
-          const pL = new THREE.Mesh(boxGeo, cp.isFinish ? finishMat : gateMat);
-          pL.scale.set(0.85, 9.5, 0.85);
-          pL.position.set(-9.5, 4.75, 0);
-          arch.add(pL);
-
-          const pR = new THREE.Mesh(boxGeo, cp.isFinish ? finishMat : gateMat);
-          pR.scale.set(0.85, 9.5, 0.85);
-          pR.position.set(9.5, 4.75, 0);
-          arch.add(pR);
-
-          const banner = new THREE.Mesh(boxGeo, cp.isFinish ? finishMat : gateMat);
-          banner.scale.set(20, 1.1, 0.85);
-          banner.position.set(0, 9.2, 0);
-          arch.add(banner);
-
-          // Floating directional arrow above gate pointing toward next sector
-          const arrow = new THREE.Mesh(arrowGeo, cp.isFinish ? finishMat : railMatPink);
-          arrow.position.set(0, 6.2, 0);
-          arch.add(arrow);
-          floatingGuideArrows.push(arrow);
-
-          raceTrackGroup.add(arch);
-        });
-      }
-
-      // --- Build Prototype Car-Soccer Arena (Secondary Mode) ---
-      let soccerBallMesh = null;
-      const soccerBallState = { x: 0, y: 4, z: -50, vx: 0, vy: 0, vz: 0, radius: 3.2 };
-
-      function buildSoccerArena() {
-        const floorGeo = new THREE.BoxGeometry(90, 1.5, 130);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.set(0, -0.75, -50);
-        floor.receiveShadow = true;
-        soccerArenaGroup.add(floor);
-
-        const goalCyan = new THREE.Mesh(
-          new THREE.BoxGeometry(24, 8, 4),
-          new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true })
-        );
-        goalCyan.position.set(0, 4, 13);
-        soccerArenaGroup.add(goalCyan);
-
-        const goalOrange = new THREE.Mesh(
-          new THREE.BoxGeometry(24, 8, 4),
-          new THREE.MeshBasicMaterial({ color: 0xff3366, wireframe: true })
-        );
-        goalOrange.position.set(0, 4, -113);
-        soccerArenaGroup.add(goalOrange);
-
-        const ballGeo = new THREE.SphereGeometry(soccerBallState.radius, 24, 24);
-        const ballMat = new THREE.MeshStandardMaterial({
-          color: 0xf8fafc, emissive: 0x38bdf8, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.5
-        });
-        soccerBallMesh = new THREE.Mesh(ballGeo, ballMat);
-        soccerBallMesh.castShadow = true;
-        soccerArenaGroup.add(soccerBallMesh);
-      }
-
-      buildSunsetSkyDome();
-      buildCitySkyline();
-      buildRaceCourse();
-      buildSoccerArena();
-
-      // --- Object-Pooled 3D Particle System (Smoke, Sparks, Boost Plumes, Landing Dust) ---
-      const PARTICLE_POOL_SIZE = 120;
-      const particlePool = [];
-      const particleGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
-      const matSmoke = new THREE.MeshBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.65 });
-      const matSpark = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-      const matNitro = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-
-      for (let i = 0; i < PARTICLE_POOL_SIZE; i++) {
-        const m = new THREE.Mesh(particleGeo, matSmoke);
-        m.visible = false;
-        scene.add(m);
-        particlePool.push({
-          mesh: m, active: false, life: 0, maxLife: 0.4,
-          vx: 0, vy: 0, vz: 0, scale: 1
-        });
-      }
-      let particleCursor = 0;
-
-      function spawnParticle(x, y, z, vx, vy, vz, kind, maxLife, startScale) {
-        if (state.graphicsPreset === "LOW" && Math.random() > 0.35) return;
-        const p = particlePool[particleCursor];
-        particleCursor = (particleCursor + 1) % PARTICLE_POOL_SIZE;
-        p.active = true;
-        p.life = 0;
-        p.maxLife = maxLife || 0.35;
-        p.vx = vx;
-        p.vy = vy;
-        p.vz = vz;
-        p.scale = startScale || 1.0;
-        p.mesh.position.set(x, y, z);
-        p.mesh.scale.set(p.scale, p.scale, p.scale);
-        p.mesh.material = (kind === "spark") ? matSpark : ((kind === "nitro") ? matNitro : matSmoke);
-        p.mesh.visible = true;
-      }
-
-      function updateParticles(dt) {
-        for (let i = 0; i < PARTICLE_POOL_SIZE; i++) {
-          const p = particlePool[i];
-          if (!p.active) continue;
-          p.life += dt;
-          if (p.life >= p.maxLife) {
-            p.active = false;
-            p.mesh.visible = false;
-            continue;
-          }
-          p.mesh.position.x += p.vx * dt;
-          p.mesh.position.y += p.vy * dt;
-          p.mesh.position.z += p.vz * dt;
-          const ratio = 1 - (p.life / p.maxLife);
-          const s = Math.max(0.1, p.scale * ratio);
-          p.mesh.scale.set(s, s, s);
-          p.mesh.rotation.x += 5 * dt;
-          p.mesh.rotation.y += 5 * dt;
+          this.syncInstances(timeSec);
         }
       }
 
-      // --- Create Sculpted Multi-Part Arcade Sports Car with Suspension & Rotating Wheels ---
-      function createCarMesh(hexColor) {
-        const carRoot = new THREE.Group();
-        const bodyGroup = new THREE.Group(); // Tilts/bounces independently for visible suspension
-        carRoot.add(bodyGroup);
+      // --------------------------------------------------------------------------
+      // 6. HYPERCAR VEHICLE CONTROLLER (445+ KM/H & TAP-CALIBRATED STEERING)
+      // --------------------------------------------------------------------------
+      class HypercarController {
+        constructor(visuals, audio, onToast) {
+          this.visuals = visuals;
+          this.mesh = visuals.root;
+          this.chassis = visuals.chassis;
+          this.audio = audio;
+          this.onToast = onToast;
 
-        const bodyMat = new THREE.MeshStandardMaterial({
-          color: hexColor, roughness: 0.18, metalness: 0.72
-        });
-        const carbonMat = new THREE.MeshStandardMaterial({
-          color: 0x111827, roughness: 0.45, metalness: 0.55
-        });
-        const cabinMat = new THREE.MeshStandardMaterial({
-          color: 0x060a12, roughness: 0.08, metalness: 0.92
-        });
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75 });
-        const rimMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const glowMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
-        const tailMat = new THREE.MeshBasicMaterial({ color: 0xff1e56 });
+          // World units/sec -> * 3.6 = KM/H (96 * 3.6 = 345 KM/H, 124 * 3.6 = 446 KM/H)
+          this.maxSpeed = 96;
+          this.nitroMaxSpeed = 124.5;
+          this.accelRate = 70;
+          this.brakeRate = 86;
+          this.gravity = 33.0;
 
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+          // Tap-Calibrated Progressive Steering
+          this.currentSteerAngle = 0;
+          this.steerHoldTime = 0;
+          this.tapThreshold = 0.12;
+          this.tapMaxCap = 0.22;
+          this.steerRampSpeed = 3.0;
+          this.steerReturnSpeed = 9.8;
+          this.maxTurnRate = 1.46;
 
-        // Carbon Front Splitter & Rear Diffuser Pan
-        const underPan = new THREE.Mesh(boxGeo, carbonMat);
-        underPan.scale.set(2.16, 0.22, 4.48);
-        underPan.position.set(0, 0.34, 0);
-        bodyGroup.add(underPan);
-
-        // Main Sculpted Lower Aero Body
-        const chassis = new THREE.Mesh(boxGeo, bodyMat);
-        chassis.scale.set(2.08, 0.54, 4.25);
-        chassis.position.set(0, 0.62, 0.05);
-        chassis.castShadow = true;
-        bodyGroup.add(chassis);
-
-        // Sloped Aerodynamic Nose Hood
-        const nose = new THREE.Mesh(boxGeo, bodyMat);
-        nose.scale.set(1.92, 0.38, 1.35);
-        nose.position.set(0, 0.66, -1.62);
-        nose.rotation.x = 0.16;
-        bodyGroup.add(nose);
-
-        // Sculpted Side Skirts / Intakes
-        const skirtL = new THREE.Mesh(boxGeo, carbonMat);
-        skirtL.scale.set(0.18, 0.32, 2.3);
-        skirtL.position.set(-1.05, 0.52, 0.1);
-        bodyGroup.add(skirtL);
-        const skirtR = skirtL.clone();
-        skirtR.position.x = 1.05;
-        bodyGroup.add(skirtR);
-
-        // Sleek Teardrop Cockpit Canopy + Slanted Windshield
-        const cabin = new THREE.Mesh(boxGeo, cabinMat);
-        cabin.scale.set(1.58, 0.52, 1.95);
-        cabin.position.set(0, 1.06, -0.05);
-        bodyGroup.add(cabin);
-
-        const windshield = new THREE.Mesh(boxGeo, cabinMat);
-        windshield.scale.set(1.52, 0.48, 0.95);
-        windshield.position.set(0, 0.98, -0.95);
-        windshield.rotation.x = 0.42;
-        bodyGroup.add(windshield);
-
-        // Twin-Pillar GT Rear Spoiler Wing
-        const strutL = new THREE.Mesh(boxGeo, carbonMat);
-        strutL.scale.set(0.1, 0.38, 0.32);
-        strutL.position.set(-0.68, 1.08, 1.85);
-        bodyGroup.add(strutL);
-        const strutR = strutL.clone();
-        strutR.position.x = 0.68;
-        bodyGroup.add(strutR);
-
-        const wing = new THREE.Mesh(boxGeo, bodyMat);
-        wing.scale.set(2.18, 0.12, 0.52);
-        wing.position.set(0, 1.28, 1.92);
-        wing.rotation.x = -0.12;
-        bodyGroup.add(wing);
-
-        // LED Headlights & Full-Width Cyberpunk Taillight Bar
-        const headL = new THREE.Mesh(boxGeo, glowMat);
-        headL.scale.set(0.48, 0.14, 0.12);
-        headL.position.set(-0.66, 0.64, -2.18);
-        bodyGroup.add(headL);
-        const headR = headL.clone();
-        headR.position.x = 0.66;
-        bodyGroup.add(headR);
-
-        const tailBar = new THREE.Mesh(boxGeo, tailMat);
-        tailBar.scale.set(1.86, 0.18, 0.12);
-        tailBar.position.set(0, 0.72, 2.18);
-        bodyGroup.add(tailBar);
-
-        // Twin Exhaust Pipes + Dual Nitro Flame Cones
-        const flameGroup = new THREE.Group();
-        const flameGeo = new THREE.ConeGeometry(0.28, 1.95, 10);
-        flameGeo.rotateX(Math.PI / 2);
-        const flameMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const flameL = new THREE.Mesh(flameGeo, flameMat);
-        flameL.position.set(-0.45, 0.52, 2.95);
-        const flameR = new THREE.Mesh(flameGeo, flameMat);
-        flameR.position.set(0.45, 0.52, 2.95);
-        flameGroup.add(flameL);
-        flameGroup.add(flameR);
-        flameGroup.visible = false;
-        bodyGroup.add(flameGroup);
-
-        // 4 Rotating Wheels with Glowing Alloy Rims
-        const wheelGeo = new THREE.CylinderGeometry(0.44, 0.44, 0.38, 16);
-        wheelGeo.rotateZ(Math.PI / 2);
-        const rimGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.40, 10);
-        rimGeo.rotateZ(Math.PI / 2);
-
-        const wheelOffsets = [
-          [-1.08, 0.44, -1.38],
-          [1.08, 0.44, -1.38],
-          [-1.08, 0.44, 1.38],
-          [1.08, 0.44, 1.38]
-        ];
-        const wheels = [];
-        wheelOffsets.forEach((pos) => {
-          const wGroup = new THREE.Group();
-          wGroup.position.set(pos[0], pos[1], pos[2]);
-          const tire = new THREE.Mesh(wheelGeo, wheelMat);
-          const rim = new THREE.Mesh(rimGeo, rimMat);
-          wGroup.add(tire);
-          wGroup.add(rim);
-          carRoot.add(wGroup);
-          wheels.push(wGroup);
-        });
-
-        return { root: carRoot, bodyGroup, chassis, boostFlame: flameGroup, bodyMat, wheels };
-      }
-
-      // --- Car Entity Class (Player, AI Rivals, and Network Peers) ---
-      class RooftopCar {
-        constructor(id, name, colorHex, isAI) {
-          this.id = id;
-          this.name = name;
-          this.colorHex = colorHex;
-          this.isAI = isAI;
-          const built = createCarMesh(colorHex);
-          this.mesh = built.root;
-          this.bodyGroup = built.bodyGroup;
-          this.chassisMesh = built.chassis;
-          this.boostFlame = built.boostFlame;
-          this.bodyMat = built.bodyMat;
-          this.wheels = built.wheels;
-          scene.add(this.mesh);
-
-          this.resetState(0, 0);
+          this.steerDotEl = document.getElementById('hud-steer-dot');
+          this.reset();
         }
 
-        resetState(startX, startZ) {
-          this.x = startX;
-          this.y = 1.2;
-          this.z = startZ;
-          this.vx = 0;
-          this.vy = 0;
-          this.vz = 0;
-          this.yaw = 0;
-          this.pitch = 0;
-          this.roll = 0;
-          this.steerAngle = 0;
-          this.wheelSpin = 0;
-          this.suspBounce = 0;
-          this.wasGrounded = true;
+        reset() {
+          this.mesh.position.set(0, 4.1, 0);
+          this.mesh.rotation.set(0, 0, 0);
+          this.chassis.position.set(0, 0, 0);
+          this.chassis.rotation.set(0, 0, 0);
 
-          this.speedKmh = 0;
-          this.boost = 100;
-          this.isBoosting = false;
-          this.isDrifting = false;
+          this.velocity = new THREE.Vector3(0, 0, -36);
           this.isGrounded = true;
+          this.wasGrounded = true;
+          this.coyoteTimer = 0;
+          this.airTime = 0;
+          this.squashOffset = 0;
+          this.nitro = 100;
+          this.isNitro = false;
+          this.isDrifting = false;
+          this.boostPadTimer = 0;
+          this.score = 0;
+          this.elapsedTime = 0;
+          this.currentSteerAngle = 0;
+          this.steerHoldTime = 0;
 
-          this.lap = 1;
-          this.checkpoint = -1;
-          this.finished = false;
-          this.finishTime = 0;
-          this.respawnCount = 0;
-
-          this.lastSafeX = startX;
-          this.lastSafeY = 1.8;
-          this.lastSafeZ = startZ;
-          this.lastSafeYaw = 0;
-
-          this.aiTargetWp = 0;
-          this.aiLaneOffset = (this.id % 2 === 0 ? 1 : -1) * 1.5;
-          this.updateTransform();
+          this.lastCheckpoint = { id: 0, x: 0, y: 4.3, z: -6 };
+          this.lastGround = { x: 0, y: 4.3, z: -6 };
+          this.track = null;
+          this.edgeCooldown = 0;
         }
 
         respawnAtCheckpoint() {
-          this.x = this.lastSafeX;
-          this.y = this.lastSafeY + 1.4;
-          this.z = this.lastSafeZ;
-          this.vx = 0;
-          this.vy = 0;
-          this.vz = 0;
-          this.yaw = this.lastSafeYaw;
-          this.pitch = 0;
-          this.roll = 0;
-          this.respawnCount += 1;
-          this.updateTransform();
-          if (this.id === 1) {
-            showToast("Respawned at Checkpoint " + Math.max(0, this.checkpoint + 1));
-          }
-        }
-
-        updateTransform() {
-          this.mesh.position.set(this.x, this.y, this.z);
-          this.mesh.rotation.order = "YXZ";
-          this.mesh.rotation.y = this.yaw;
-          this.mesh.rotation.x = this.pitch;
-          this.mesh.rotation.z = this.roll;
-
-          // Visible suspension bounce & chassis pitch/roll
-          if (this.bodyGroup) {
-            this.bodyGroup.position.y = this.suspBounce;
-            this.bodyGroup.rotation.z = -this.steerAngle * 0.14;
-            this.bodyGroup.rotation.x = this.isBoosting ? -0.045 : 0;
-          }
-
-          // Visible wheel spin & front wheel steering pivot
-          if (this.wheels && this.wheels.length === 4) {
-            for (let i = 0; i < 4; i++) {
-              this.wheels[i].rotation.order = "YXZ";
-              this.wheels[i].rotation.y = (i < 2) ? this.steerAngle * 0.55 : 0;
-              this.wheels[i].rotation.x = this.wheelSpin;
+          // Respawn where you last had road under you (keeps progress). If that
+          // piece of track was already recycled, fall back to the nearest live segment.
+          let cp = this.lastGround || this.lastCheckpoint;
+          const tr = this.track;
+          if (tr && !tr.getSurfaceAt(cp.x, cp.z)) {
+            const pz = this.mesh.position.z;
+            let best = null, bd = Infinity;
+            for (const sg of tr.segments) {
+              const d = Math.abs((sg.zStart + sg.zEnd) * 0.5 - pz);
+              if (d < bd) { bd = d; best = sg; }
             }
+            if (best) cp = { x: best.xCenter, y: best.topY + 0.3, z: best.zStart - 12 };
           }
-
-          this.boostFlame.visible = this.isBoosting;
-          if (this.isBoosting) {
-            const flicker = 0.85 + Math.random() * 0.35;
-            this.boostFlame.scale.set(1, 1, flicker);
-          }
-        }
-      }
-
-      // --- Game State & Input ---
-      const state = {
-        mode: "SOLO_RACE", // SOLO_RACE, TIME_TRIAL, HARNESS_8, SOCCER
-        aiDifficulty: "PRO", // ROOKIE, PRO, APEX
-        graphicsPreset: "MEDIUM", // LOW, MEDIUM, HIGH
-        totalLaps: 2,
-        isMenuOpen: false,
-        isPaused: false,
-        isCountdown: false,
-        isRaceActive: false,
-        countdownTimer: 3.0,
-        raceTime: 0.0,
-        bestTime: loadBestTime(),
-        cameraMode: 0,
-        cameraShake: 0,
-        soccerBlue: 0,
-        soccerOrange: 0,
-        fps: 60
-      };
-
-      const keys = {
-        gas: false, brake: false, left: false, right: false,
-        drift: false, boost: false, pitchUp: false, pitchDown: false
-      };
-
-      const cars = [];
-      const playerCar = new RooftopCar(1, "Player 1", 0xff3366, false);
-      cars.push(playerCar);
-
-      const AI_PRESETS = [
-        { name: "Nova_AI", color: 0x00f0ff },
-        { name: "Vortex_AI", color: 0xfacc15 },
-        { name: "Pulse_AI", color: 0x10b981 },
-        { name: "Blitz_AI", color: 0xa855f7 },
-        { name: "Apex_AI", color: 0xf97316 },
-        { name: "Zenith_AI", color: 0x38bdf8 },
-        { name: "Hyper_AI", color: 0xec4899 }
-      ];
-
-      function configureCarRoster(count) {
-        while (cars.length > 1) {
-          const removed = cars.pop();
-          scene.remove(removed.mesh);
-        }
-        for (let i = 1; i < count; i++) {
-          const preset = AI_PRESETS[(i - 1) % AI_PRESETS.length];
-          cars.push(new RooftopCar(i + 1, preset.name, preset.color, true));
-        }
-      }
-
-      // --- Toast Notification Helper ---
-      let toastTimeout = null;
-      function showToast(msg) {
-        const el = document.getElementById("toast-message");
-        if (!el) return;
-        el.textContent = msg;
-        el.style.opacity = "1";
-        if (toastTimeout) clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => { el.style.opacity = "0"; }, 1800);
-      }
-
-      // --- Surface Height & Barrier Query for Custom 60Hz Rooftop Physics ---
-      function sampleTrackSurface(x, y, z) {
-        if (state.mode === "SOCCER") {
-          if (Math.abs(x) <= 45 && z >= -115 && z <= 15) {
-            return { hit: true, height: 0.0, pitch: 0, seg: { x: 0, z: -50, w: 90, l: 130, barriers: true, yaw: 0 }, localX: x };
-          }
-          return { hit: false, height: -999, pitch: 0, seg: null, localX: 0 };
+          this.mesh.position.set(cp.x, cp.y + 0.5, cp.z);
+          this.mesh.rotation.set(0, 0, 0);
+          this.chassis.rotation.set(0, 0, 0);
+          this.velocity.set(0, 0, -62);
+          this.isGrounded = true;
+          this.airTime = 0;
+          this.currentSteerAngle = 0;
+          this.steerHoldTime = 0;
+          this.onToast('BACK ON THE ROAD', '#22d3ee');
         }
 
-        let best = { hit: false, height: -999, pitch: 0, seg: null, localX: 0 };
-        for (let i = 0; i < TRACK_SEGMENTS.length; i++) {
-          const s = TRACK_SEGMENTS[i];
-          const dx = x - s.x;
-          const dz = z - s.z;
-          const cosY = Math.cos(-(s.yaw || 0));
-          const sinY = Math.sin(-(s.yaw || 0));
-          const localX = dx * cosY - dz * sinY;
-          const localZ = dx * sinY + dz * cosY;
+        update(dt, input, track) {
+          this.track = track;
+          this.elapsedTime += dt;
 
-          if (Math.abs(localX) <= s.w * 0.5 + 0.6 && Math.abs(localZ) <= s.l * 0.5 + 1.0) {
-            const surfaceY = s.y + 0.6 + (-localZ) * Math.sin(s.pitch || 0);
-            if (y >= surfaceY - 3.5 && surfaceY > best.height) {
-              best = { hit: true, height: surfaceY, pitch: s.pitch || 0, seg: s, localX };
-            }
-          }
-        }
-        return best;
-      }
-
-      // --- Step Single Car Physics (60Hz Deterministic Substep) ---
-      function stepCarPhysics(car, dt) {
-        if (car.finished && state.mode !== "SOCCER") {
-          car.vx *= 0.95;
-          car.vz *= 0.95;
-          car.speedKmh = Math.hypot(car.vx, car.vz) * 3.6;
-          car.updateTransform();
-          return;
-        }
-
-        let throttle = 0;
-        let brake = 0;
-        let steer = 0;
-        let drift = false;
-        let boostReq = false;
-        let airPitch = 0;
-
-        const fwdX = -Math.sin(car.yaw);
-        const fwdZ = -Math.cos(car.yaw);
-        const rightX = Math.cos(car.yaw);
-        const rightZ = -Math.sin(car.yaw);
-
-        if (!car.isAI) {
-          throttle = keys.gas ? 1 : 0;
-          brake = keys.brake ? 1 : 0;
-          steer = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
-          drift = keys.drift;
-          boostReq = keys.boost;
-          airPitch = (keys.brake ? 1 : 0) - (keys.gas ? 1 : 0);
-        } else {
-          let targetX = 0, targetZ = 0;
-          if (state.mode === "SOCCER") {
-            targetX = soccerBallState.x;
-            targetZ = soccerBallState.z;
-          } else {
-            const wp = CHECKPOINTS[car.aiTargetWp % CHECKPOINTS.length];
-            targetX = wp.x + car.aiLaneOffset;
-            targetZ = wp.z;
-            if (Math.hypot(targetX - car.x, targetZ - car.z) < 16) {
-              car.aiTargetWp = (car.aiTargetWp + 1) % CHECKPOINTS.length;
-            }
-          }
-          const dxWp = targetX - car.x;
-          const dzWp = targetZ - car.z;
-          const localRight = dxWp * rightX + dzWp * rightZ;
-          const localFwd = dxWp * fwdX + dzWp * fwdZ;
-          const angleToWp = Math.atan2(-localRight, Math.max(0.1, localFwd));
-          steer = Math.max(-1, Math.min(1, angleToWp * 2.2));
-          const diff = angleToWp;
-          const diffMult = state.aiDifficulty === "ROOKIE" ? 0.78 : (state.aiDifficulty === "APEX" ? 1.03 : 0.91);
-          throttle = (Math.abs(diff) > 0.75 ? 0.65 : 1.0) * diffMult;
-          drift = Math.abs(diff) > 0.55 && car.speedKmh > 95;
-          boostReq = Math.abs(diff) < 0.22 && car.boost > 45;
-        }
-
-        if (!state.isRaceActive) {
-          throttle = 0;
-          brake = 1;
-          boostReq = false;
-        }
-
-        car.steerAngle += (steer - car.steerAngle) * Math.min(1, 12 * dt);
-
-        const surf = sampleTrackSurface(car.x, car.y, car.z);
-        const nowGrounded = surf.hit && (car.y <= surf.height + 0.85) && (car.vy <= 4.0 || surf.pitch > 0.05);
-
-        // Landing Impact Suspension & Dust Burst
-        if (nowGrounded && !car.wasGrounded && car.vy < -6.0) {
-          car.suspBounce = -0.22;
-          if (car.id === 1) {
-            state.cameraShake = Math.min(0.45, Math.abs(car.vy) * 0.02);
-            Sfx.landing();
-          }
-          for (let k = 0; k < 4; k++) {
-            spawnParticle(
-              car.x + (Math.random() - 0.5) * 2.2, car.y + 0.2, car.z + (Math.random() - 0.5) * 2.2,
-              (Math.random() - 0.5) * 6, 2 + Math.random() * 3, (Math.random() - 0.5) * 6,
-              "smoke", 0.35, 1.15
-            );
-          }
-        }
-        car.wasGrounded = nowGrounded;
-        car.isGrounded = nowGrounded;
-        car.suspBounce += (0 - car.suspBounce) * Math.min(1, 14 * dt);
-
-        const fwdSpeed = car.vx * fwdX + car.vz * fwdZ;
-        const latSpeed = car.vx * rightX + car.vz * rightZ;
-        car.wheelSpin -= fwdSpeed * 2.2 * dt;
-
-        // Steering & Drift
-        const speedFactor = Math.min(1, Math.hypot(car.vx, car.vz) / 55);
-        const turnRate = (car.isDrifting ? 2.65 : 2.05) * (1 - speedFactor * 0.35);
-        if (Math.hypot(car.vx, car.vz) > 1.2 || !car.isGrounded) {
-          const dirSign = fwdSpeed >= -1.0 ? 1 : -1;
-          car.yaw += steer * turnRate * dirSign * dt;
-        }
-
-        car.isDrifting = car.isGrounded && drift && Math.abs(steer) > 0.1 && Math.abs(fwdSpeed) > 10;
-        if (car.isDrifting) {
-          car.boost = Math.min(100, car.boost + 24 * dt);
-          if (Math.random() < 0.55) {
-            spawnParticle(
-              car.x - fwdX * 1.4 + rightX * (Math.random() > 0.5 ? 0.9 : -0.9),
-              car.y + 0.2,
-              car.z - fwdZ * 1.4 + rightZ * (Math.random() > 0.5 ? 0.9 : -0.9),
-              -car.vx * 0.15, 1.5, -car.vz * 0.15,
-              "smoke", 0.38, 1.0
-            );
-          }
-        } else {
-          car.boost = Math.min(100, car.boost + 5 * dt);
-        }
-
-        // Boost Thruster & Exhaust Trail
-        car.isBoosting = boostReq && car.boost > 2 && state.isRaceActive;
-        if (car.isBoosting) {
-          car.boost = Math.max(0, car.boost - 32 * dt);
-          if (car.id === 1 && Math.random() < 0.15) Sfx.boost();
-          if (Math.random() < 0.7) {
-            spawnParticle(
-              car.x - fwdX * 2.5, car.y + 0.5, car.z - fwdZ * 2.5,
-              -fwdX * 8 + (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, -fwdZ * 8 + (Math.random() - 0.5) * 2,
-              "nitro", 0.22, 0.95
-            );
-          }
-        }
-
-        const maxMetersPerSec = car.isBoosting ? 79.0 : 58.0;
-        const accelForce = car.isBoosting ? 58.0 : 36.0;
-
-        if (car.isGrounded) {
-          if (throttle > 0 && fwdSpeed < maxMetersPerSec) {
-            car.vx += fwdX * throttle * accelForce * dt;
-            car.vz += fwdZ * throttle * accelForce * dt;
-          } else if (brake > 0) {
-            if (fwdSpeed > 2.0) {
-              car.vx -= fwdX * 48.0 * dt;
-              car.vz -= fwdZ * 48.0 * dt;
-            } else if (fwdSpeed > -22.0) {
-              car.vx -= fwdX * 24.0 * dt;
-              car.vz -= fwdZ * 24.0 * dt;
+          const rawSteer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
+          if (rawSteer !== 0) {
+            if (Math.sign(rawSteer) !== Math.sign(this.currentSteerAngle) && this.currentSteerAngle !== 0) {
+              this.currentSteerAngle = THREE.MathUtils.lerp(this.currentSteerAngle, 0, Math.min(1, 16 * dt));
+              // Snap to exactly 0 so the new direction can take over (lerp alone never reaches 0 => steering froze)
+              if (Math.abs(this.currentSteerAngle) < 0.03) this.currentSteerAngle = 0;
+              this.steerHoldTime = 0;
+            } else {
+              this.steerHoldTime += dt;
+              const cap = this.steerHoldTime < this.tapThreshold ? this.tapMaxCap : 1.0;
+              const nextSteer = this.currentSteerAngle + rawSteer * this.steerRampSpeed * dt;
+              this.currentSteerAngle = THREE.MathUtils.clamp(nextSteer, -cap, cap);
             }
           } else {
-            car.vx *= (1 - 0.85 * dt);
-            car.vz *= (1 - 0.85 * dt);
+            this.steerHoldTime = 0;
+            this.currentSteerAngle = THREE.MathUtils.lerp(
+              this.currentSteerAngle,
+              0,
+              Math.min(1, this.steerReturnSpeed * dt)
+            );
+            if (Math.abs(this.currentSteerAngle) < 0.008) this.currentSteerAngle = 0;
           }
 
-          const gripDamp = car.isDrifting ? 3.2 : 9.5;
-          car.vx -= rightX * latSpeed * Math.min(1, gripDamp * dt);
-          car.vz -= rightZ * latSpeed * Math.min(1, gripDamp * dt);
+          if (this.steerDotEl) {
+            this.steerDotEl.style.left = (50 - this.currentSteerAngle * 46) + '%';
+          }
 
-          car.y = surf.height;
-          if (surf.pitch > 0.05 && fwdSpeed > 12) {
-            car.vy = Math.sin(surf.pitch) * fwdSpeed * 0.92;
+          // Cubic-ease curve for micro-tap precision
+          const curvedSteer = Math.sign(this.currentSteerAngle) * Math.pow(Math.abs(this.currentSteerAngle), 2.1);
+
+          _fwdVec.set(0, 0, -1).applyAxisAngle(_UP, this.mesh.rotation.y);
+          _rightVec.set(1, 0, 0).applyAxisAngle(_UP, this.mesh.rotation.y);
+
+          let forwardSpeed = this.velocity.dot(_fwdVec);
+          let lateralSpeed = this.velocity.dot(_rightVec);
+
+          // Auto-cruise assist + full manual throttle/brake
+          const throttle = input.up ? 1.0 : input.down ? -0.9 : 0.8;
+          this.visuals.tailMat.color.setHex(input.down ? 0xff0044 : 0xbe123c);
+
+          if (this.boostPadTimer > 0) this.boostPadTimer -= dt;
+          if (this.edgeCooldown > 0) this.edgeCooldown -= dt;
+          const wantsNitro = input.nitro && this.nitro > 2;
+          this.isNitro = wantsNitro || this.boostPadTimer > 0;
+
+          if (wantsNitro) {
+            this.nitro = Math.max(0, this.nitro - 21 * dt);
           } else {
-            car.vy = 0;
+            const regen = this.isDrifting ? 20 : !this.isGrounded ? 16 : 12;
+            this.nitro = Math.min(100, this.nitro + regen * dt);
           }
-          car.pitch += (surf.pitch - car.pitch) * 10 * dt;
-          car.roll += ((car.isDrifting ? -steer * 0.12 : 0) - car.roll) * 10 * dt;
 
-          // Side Barrier Collision Response + Sparks
-          if (surf.seg && surf.seg.barriers && Math.abs(surf.localX) > surf.seg.w * 0.5 - 1.35) {
-            const sign = surf.localX > 0 ? 1 : -1;
-            const pushLocalX = sign * (surf.seg.w * 0.5 - 1.35);
-            const corr = pushLocalX - surf.localX;
-            const cosY = Math.cos(surf.seg.yaw || 0);
-            const sinY = Math.sin(surf.seg.yaw || 0);
-            car.x += corr * cosY;
-            car.z += corr * sinY;
-            car.vx *= 0.78;
-            car.vz *= 0.78;
-            if (car.id === 1) {
-              Sfx.bump();
-              state.cameraShake = 0.25;
-            }
-            for (let s = 0; s < 3; s++) {
-              spawnParticle(
-                car.x + sign * 1.0, car.y + 0.6, car.z,
-                (Math.random() - 0.5) * 10, 3 + Math.random() * 5, (Math.random() - 0.5) * 10,
-                "spark", 0.25, 0.75
-              );
-            }
-          }
-        } else {
-          car.vy -= 22.0 * dt;
-          car.pitch = Math.max(-0.65, Math.min(0.65, car.pitch + airPitch * 1.8 * dt));
-          car.roll = Math.max(-0.75, Math.min(0.75, car.roll - steer * 2.1 * dt));
-          if (car.isBoosting) {
-            car.vx += fwdX * 22.0 * dt;
-            car.vz += fwdZ * 22.0 * dt;
-          }
-        }
+          const topSpeed = this.isNitro ? this.nitroMaxSpeed : this.maxSpeed;
 
-        car.x += car.vx * dt;
-        car.y += car.vy * dt;
-        car.z += car.vz * dt;
-        car.speedKmh = Math.hypot(car.vx, car.vz) * 3.6;
-
-        // Boost Pad Trigger Check
-        if (state.mode !== "SOCCER") {
-          for (let i = 0; i < BOOST_PADS.length; i++) {
-            const pad = BOOST_PADS[i];
-            if (Math.abs(car.x - pad.x) < 3.4 && Math.abs(car.z - pad.z) < 4.2 && Math.abs(car.y - pad.y) < 2.8) {
-              car.boost = Math.min(100, car.boost + 45);
-              car.vx += fwdX * 14.0;
-              car.vz += fwdZ * 14.0;
-              if (car.id === 1) Sfx.boost();
+          if (this.isGrounded || this.coyoteTimer > 0) {
+            if (throttle > 0) {
+              const accel = this.isNitro ? this.accelRate * 1.75 : this.accelRate;
+              forwardSpeed += throttle * accel * dt;
+            } else if (throttle < 0) {
+              forwardSpeed += throttle * this.brakeRate * dt;
             }
           }
 
-          // Obstacle Block Collision Check
-          for (let i = 0; i < OBSTACLES.length; i++) {
-            const obs = OBSTACLES[i];
-            if (Math.abs(car.x - obs.x) < obs.w * 0.5 + 1.1 &&
-                Math.abs(car.z - obs.z) < obs.d * 0.5 + 1.8 &&
-                Math.abs(car.y - obs.y) < obs.h) {
-              car.vx *= -0.45;
-              car.vz *= -0.45;
-              car.x += (car.x >= obs.x ? 1 : -1) * 1.2;
-              if (car.id === 1) {
-                Sfx.bump();
-                state.cameraShake = 0.35;
+          forwardSpeed = THREE.MathUtils.lerp(
+            forwardSpeed,
+            THREE.MathUtils.clamp(forwardSpeed, -18, topSpeed),
+            Math.min(1, 8.5 * dt)
+          );
+
+          const speedNorm = THREE.MathUtils.clamp(Math.abs(forwardSpeed) / this.maxSpeed, 0.25, 1.0);
+          const driftTurnMult = input.drift && this.isGrounded ? 1.24 : 1.0;
+          const turnRate = THREE.MathUtils.lerp(this.maxTurnRate, this.maxTurnRate * 0.44, speedNorm) * driftTurnMult;
+
+          if (Math.abs(forwardSpeed) > 0.5) {
+            const airScale = this.isGrounded ? 1.0 : 0.48;
+            this.mesh.rotation.y += curvedSteer * turnRate * airScale * dt;
+            this.mesh.rotation.y = THREE.MathUtils.clamp(this.mesh.rotation.y, -0.78, 0.78);
+          }
+
+          // Self-centering: with no steering input the car straightens out (no endless sideways drift)
+          if (rawSteer === 0) {
+            const centerRate = this.isGrounded ? 3.2 : 0.7;
+            this.mesh.rotation.y = THREE.MathUtils.lerp(this.mesh.rotation.y, 0, Math.min(1, centerRate * dt));
+          }
+
+          this.isDrifting = this.isGrounded && input.drift && Math.abs(curvedSteer) > 0.14 && forwardSpeed > 26;
+          const grip = this.isDrifting ? 3.2 : this.isGrounded ? 13.0 : 0.7;
+          lateralSpeed = THREE.MathUtils.lerp(lateralSpeed, 0, Math.min(1, grip * dt));
+
+          if (this.isDrifting) {
+            this.score += 115 * dt;
+          }
+
+          this.velocity.x = _fwdVec.x * forwardSpeed + _rightVec.x * lateralSpeed;
+          this.velocity.z = _fwdVec.z * forwardSpeed + _rightVec.z * lateralSpeed;
+
+          const surface = track.getSurfaceAt(this.mesh.position.x, this.mesh.position.z);
+          this.wasGrounded = this.isGrounded;
+
+          if (surface && this.mesh.position.y <= surface.groundY + 0.65 && this.velocity.y <= 3.0) {
+            this.mesh.position.y = surface.groundY;
+            this.isGrounded = true;
+            this.coyoteTimer = 0.12;
+
+            // Soft guard-rails: slide along the deck edge instead of dropping into the sea
+            const edge = surface.seg.width * 0.5 - 1.1;
+            const relX = this.mesh.position.x - surface.seg.xCenter;
+            if (Math.abs(relX) > edge) {
+              this.mesh.position.x = surface.seg.xCenter + Math.sign(relX) * edge;
+              this.mesh.rotation.y *= 0.8;
+              if (this.edgeCooldown <= 0) {
+                this.edgeCooldown = 0.35;
+                this.audio.playScrape();
               }
             }
-          }
+            if (!surface.onRamp) {
+              this.lastGround = { x: surface.seg.xCenter, y: surface.groundY, z: this.mesh.position.z };
+            }
 
-          // Checkpoint Progression Check
-          const nextIdx = (car.checkpoint + 1) % CHECKPOINTS.length;
-          const shortcutIdx = (car.checkpoint + 2) % CHECKPOINTS.length;
-          [nextIdx, shortcutIdx].forEach((candIdx) => {
-            const cp = CHECKPOINTS[candIdx];
-            if (Math.hypot(car.x - cp.x, car.z - cp.z) <= cp.radius && Math.abs(car.y - cp.y) < 9.0) {
-              car.checkpoint = candIdx;
-              car.lastSafeX = cp.x;
-              car.lastSafeY = cp.y + 1.0;
-              car.lastSafeZ = cp.z;
-              car.lastSafeYaw = cp.yaw;
-              car.aiTargetWp = (candIdx + 1) % CHECKPOINTS.length;
+            if (surface.onRamp) {
+              this.velocity.y = Math.max(this.velocity.y, Math.max(9.5, Math.abs(forwardSpeed) * 0.125));
+              this.chassis.rotation.x = THREE.MathUtils.lerp(this.chassis.rotation.x, 0.24, 12 * dt);
+            } else {
+              this.velocity.y = 0;
+              this.chassis.rotation.x = THREE.MathUtils.lerp(this.chassis.rotation.x, 0, 14 * dt);
+            }
 
-              if (car.id === 1) {
-                Sfx.checkpoint();
-                showToast(cp.isFinish ? "Lap / Finish Gate Crossed!" : "Checkpoint " + (candIdx + 1) + " / " + CHECKPOINTS.length);
-              }
+            if (!this.wasGrounded && this.airTime > 0.42) {
+              this.squashOffset = -0.24;
+              const pts = Math.round(this.airTime * 360);
+              this.score += pts;
+              this.onToast('STUNT LANDING +' + pts, '#fde047');
+            }
+            this.airTime = 0;
 
-              if (cp.isFinish) {
-                if (car.lap >= state.totalLaps) {
-                  car.finished = true;
-                  car.finishTime = state.raceTime;
-                  if (car.id === 1) {
-                    if (state.bestTime === null || car.finishTime < state.bestTime) {
-                      state.bestTime = car.finishTime;
-                      saveBestTime(state.bestTime);
-                    }
-                    openResultsModal();
-                  }
-                } else {
-                  car.lap += 1;
+            const seg = surface.seg;
+            if (seg.isCheckpoint && !seg.checkpointClaimed) {
+              seg.checkpointClaimed = true;
+              this.lastCheckpoint = {
+                id: seg.id,
+                x: seg.xCenter,
+                y: seg.topY + 0.3,
+                z: seg.zStart - 9,
+              };
+              this.audio.playCheckpoint();
+              this.onToast('CHECKPOINT ' + seg.id + ' REACHED!', '#6ee7b7');
+            }
+
+            for (const pad of seg.boostPads) {
+              if (
+                Math.abs(this.mesh.position.x - pad.x) < pad.w * 0.68 &&
+                Math.abs(this.mesh.position.z - pad.z) < pad.l * 0.58
+              ) {
+                if (this.boostPadTimer <= 0.2) {
+                  this.audio.playBoost();
+                  this.onToast('TURBO CHEVRON BOOST!', '#22d3ee');
                 }
+                this.boostPadTimer = 1.5;
+                this.nitro = Math.min(100, this.nitro + 32);
               }
             }
-          });
-        }
+          } else {
+            this.isGrounded = false;
+            this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
+            this.airTime += dt;
+            this.velocity.y -= this.gravity * dt;
 
-        // Fall Off Rooftop Recovery Check
-        if (car.y < -16.0) {
-          car.respawnAtCheckpoint();
-        }
+            const airPitch = (input.up ? -0.16 : 0) + (input.down ? 0.2 : 0);
+            this.chassis.rotation.x = THREE.MathUtils.lerp(this.chassis.rotation.x, airPitch, 5 * dt);
+          }
 
-        car.updateTransform();
-      }
-
-      // --- Car-to-Car Collision & Car-Soccer Ball Physics ---
-      function resolveCollisionsAndSoccer(dt) {
-        for (let i = 0; i < cars.length; i++) {
-          for (let j = i + 1; j < cars.length; j++) {
-            const a = cars[i];
-            const b = cars[j];
-            const dx = b.x - a.x;
-            const dz = b.z - a.z;
-            const dy = b.y - a.y;
-            const dist = Math.hypot(dx, dz);
-            if (dist < 2.6 && Math.abs(dy) < 1.8 && dist > 0.001) {
-              const nx = dx / dist;
-              const nz = dz / dist;
-              const overlap = 2.6 - dist;
-              a.x -= nx * overlap * 0.5;
-              a.z -= nz * overlap * 0.5;
-              b.x += nx * overlap * 0.5;
-              b.z += nz * overlap * 0.5;
-
-              const relVx = a.vx - b.vx;
-              const relVz = a.vz - b.vz;
-              const sepVel = relVx * nx + relVz * nz;
-              if (sepVel > 0) {
-                const impulse = sepVel * 0.85 + 4.0;
-                a.vx -= nx * impulse;
-                a.vz -= nz * impulse;
-                b.vx += nx * impulse;
-                b.vz += nz * impulse;
-                if (a.id === 1 || b.id === 1) {
-                  Sfx.bump();
-                  state.cameraShake = 0.28;
-                }
-                spawnParticle((a.x + b.x) * 0.5, a.y + 0.7, (a.z + b.z) * 0.5, 0, 5, 0, "spark", 0.25, 0.9);
+          // Collect Vice Orbs
+          if (surface) {
+            for (const orb of surface.seg.orbs) {
+              if (
+                !orb.collected &&
+                Math.abs(this.mesh.position.x - orb.x) < 2.3 &&
+                Math.abs(this.mesh.position.z - orb.z) < 2.5 &&
+                Math.abs(this.mesh.position.y - orb.y) < 2.6
+              ) {
+                orb.collected = true;
+                this.nitro = Math.min(100, this.nitro + 24);
+                this.score += 250;
+                this.audio.playOrb();
+                this.onToast('VICE ORB +250', '#fef08a');
               }
             }
           }
-        }
 
-        if (state.mode === "SOCCER" && soccerBallMesh) {
-          const b = soccerBallState;
-          b.vy -= 14.0 * dt;
-          b.x += b.vx * dt;
-          b.y += b.vy * dt;
-          b.z += b.vz * dt;
-          b.vx *= (1 - 0.35 * dt);
-          b.vz *= (1 - 0.35 * dt);
+          this.mesh.position.addScaledVector(this.velocity, dt);
+          this.score += Math.max(0, forwardSpeed) * 0.35 * dt;
 
-          if (b.y < b.radius) {
-            b.y = b.radius;
-            b.vy = Math.abs(b.vy) * 0.65;
-          }
-          if (Math.abs(b.x) > 42) {
-            b.x = Math.sign(b.x) * 42;
-            b.vx *= -0.8;
+          // Body Roll & Suspension Squash
+          const targetRoll = -curvedSteer * (this.isDrifting ? 0.18 : 0.1) * speedNorm;
+          this.chassis.rotation.z = THREE.MathUtils.lerp(this.chassis.rotation.z, targetRoll, 11 * dt);
+          this.squashOffset = THREE.MathUtils.lerp(this.squashOffset, 0, 12 * dt);
+          this.chassis.position.y = this.squashOffset;
+
+          // Active Hydraulic Rear GT Wing
+          if (this.visuals.wingGroup && this.visuals.wingBlade) {
+            const wingY = 0.88 + speedNorm * 0.22;
+            const wingPitch = input.down ? 0.44 : 0.08 + speedNorm * 0.12;
+            this.visuals.wingGroup.position.y = THREE.MathUtils.lerp(this.visuals.wingGroup.position.y, wingY, 10 * dt);
+            this.visuals.wingBlade.rotation.x = THREE.MathUtils.lerp(this.visuals.wingBlade.rotation.x, wingPitch, 12 * dt);
           }
 
-          if (b.z > 11 && Math.abs(b.x) < 12) {
-            state.soccerOrange += 1;
-            showToast("ORANGE NOVA SCORES!");
-            Sfx.checkpoint();
-            b.x = 0; b.y = 6; b.z = -50; b.vx = 0; b.vy = 0; b.vz = 0;
-          } else if (b.z < -111 && Math.abs(b.x) < 12) {
-            state.soccerBlue += 1;
-            showToast("CYAN APEX SCORES!");
-            Sfx.checkpoint();
-            b.x = 0; b.y = 6; b.z = -50; b.vx = 0; b.vy = 0; b.vz = 0;
-          } else if (b.z > 14 || b.z < -114) {
-            b.z = b.z > 14 ? 14 : -114;
-            b.vz *= -0.8;
-          }
-
-          cars.forEach((c) => {
-            const dx = b.x - c.x;
-            const dy = b.y - c.y;
-            const dz = b.z - c.z;
-            const d = Math.hypot(dx, dy, dz);
-            if (d < b.radius + 1.8 && d > 0.01) {
-              const nx = dx / d;
-              const ny = Math.max(0.2, dy / d);
-              const nz = dz / d;
-              const hitSpeed = Math.max(18, Math.hypot(c.vx, c.vz) * 1.35);
-              b.vx = nx * hitSpeed;
-              b.vy = ny * 12;
-              b.vz = nz * hitSpeed;
-              Sfx.bump();
+          // Wheel Rotation & Front Steering
+          const spin = forwardSpeed * dt * 2.3;
+          this.visuals.wheels.forEach((w, idx) => {
+            w.spinHub.rotation.x -= spin;
+            if (idx < 2) {
+              w.pivot.rotation.y = curvedSteer * 0.34;
             }
           });
 
-          soccerBallMesh.position.set(b.x, b.y, b.z);
-          soccerBallMesh.rotation.x += b.vz * 0.05 * dt;
-          soccerBallMesh.rotation.z -= b.vx * 0.05 * dt;
-        }
-      }
-
-      // --- Update Spring-Damped Third-Person Chase Camera with Look-Ahead & Shake ---
-      const camPos = new THREE.Vector3(0, 6, 12);
-      const camLook = new THREE.Vector3(0, 2, -10);
-
-      function updateChaseCamera(dt) {
-        const distPresets = [
-          { dist: 7.8, height: 3.1 },
-          { dist: 10.5, height: 4.4 },
-          { dist: 5.5, height: 2.2 }
-        ];
-        const preset = distPresets[state.cameraMode % distPresets.length];
-        const fwdX = -Math.sin(playerCar.yaw);
-        const fwdZ = -Math.cos(playerCar.yaw);
-        const rightX = Math.cos(playerCar.yaw);
-        const rightZ = -Math.sin(playerCar.yaw);
-
-        const lateralSwing = -playerCar.steerAngle * (playerCar.isDrifting ? 1.8 : 0.75);
-        const desiredX = playerCar.x - fwdX * preset.dist + rightX * lateralSwing;
-        const desiredY = Math.max(playerCar.y + preset.height + (playerCar.isGrounded ? 0 : 0.9), 2.0);
-        const desiredZ = playerCar.z - fwdZ * preset.dist + rightZ * lateralSwing;
-
-        camPos.lerp(new THREE.Vector3(desiredX, desiredY, desiredZ), Math.min(1, 10 * dt));
-
-        state.cameraShake = Math.max(0, state.cameraShake - 1.5 * dt);
-        const shakeX = (Math.random() - 0.5) * state.cameraShake;
-        const shakeY = (Math.random() - 0.5) * state.cameraShake;
-
-        camera.position.set(camPos.x + shakeX, camPos.y + shakeY, camPos.z);
-
-        const targetLook = new THREE.Vector3(
-          playerCar.x + fwdX * 13 + rightX * (playerCar.steerAngle * 2.5),
-          playerCar.y + 1.25,
-          playerCar.z + fwdZ * 13 + rightZ * (playerCar.steerAngle * 2.5)
-        );
-        camLook.lerp(targetLook, Math.min(1, 14 * dt));
-        camera.lookAt(camLook);
-
-        const targetFov = 72 + Math.min(18, (playerCar.speedKmh / 260) * 16) + (playerCar.isBoosting ? 7 : 0);
-        camera.fov += (targetFov - camera.fov) * 8 * dt;
-        camera.updateProjectionMatrix();
-      }
-
-      // --- Render Live 2D Track Minimap ---
-      function renderMinimap() {
-        const can = document.getElementById("minimap-canvas");
-        if (!can || !can.getContext) return;
-        const ctx = can.getContext("2d");
-        if (!ctx || !ctx.clearRect) return;
-
-        ctx.clearRect(0, 0, can.width, can.height);
-
-        // Map world coordinates X: [-35..165] -> [12..124], Z: [-325..45] -> [12..144]
-        const mapX = (wx) => 16 + ((wx + 30) / 195) * 104;
-        const mapY = (wz) => 14 + ((wz + 320) / 365) * 128;
-
-        // Draw closed rooftop loop outline
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        CHECKPOINTS.forEach((cp, idx) => {
-          const px = mapX(cp.x);
-          const py = mapY(cp.z);
-          if (idx === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.closePath();
-        ctx.stroke();
-
-        // Highlight next checkpoint
-        const nextCpIdx = (playerCar.checkpoint + 1) % CHECKPOINTS.length;
-        const nextCp = CHECKPOINTS[nextCpIdx];
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath();
-        ctx.arc(mapX(nextCp.x), mapY(nextCp.z), 4.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        const cpLabel = document.getElementById("minimap-next-cp");
-        if (cpLabel) cpLabel.textContent = "CP " + (nextCpIdx + 1) + "/" + CHECKPOINTS.length;
-
-        // Draw AI & Player Dots
-        cars.forEach((c) => {
-          ctx.fillStyle = (c.id === 1) ? "#ff3366" : "#00f0ff";
-          ctx.beginPath();
-          ctx.arc(mapX(c.x), mapY(c.z), c.id === 1 ? 4.5 : 3.2, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      }
-
-      // --- Compute Standings ---
-      function getStandings() {
-        const list = cars.slice();
-        list.sort((a, b) => {
-          if (a.finished && b.finished) return a.finishTime - b.finishTime;
-          if (a.finished !== b.finished) return a.finished ? -1 : 1;
-          if (a.lap !== b.lap) return b.lap - a.lap;
-          if (a.checkpoint !== b.checkpoint) return b.checkpoint - a.checkpoint;
-          const nextCp = CHECKPOINTS[(a.checkpoint + 1) % CHECKPOINTS.length];
-          const da = Math.hypot(a.x - nextCp.x, a.z - nextCp.z);
-          const db = Math.hypot(b.x - nextCp.x, b.z - nextCp.z);
-          return da - db;
-        });
-        return list;
-      }
-
-      // --- Start / Reset Race or Mode ---
-      function startMode(modeName) {
-        state.mode = modeName || state.mode;
-        state.isPaused = false;
-        document.getElementById("modal-results").classList.add("hidden");
-        document.getElementById("modal-results").classList.remove("flex");
-
-        const isSoccer = state.mode === "SOCCER";
-        raceTrackGroup.visible = !isSoccer;
-        soccerArenaGroup.visible = isSoccer;
-        document.getElementById("top-race-stats").classList.toggle("hidden", isSoccer);
-        document.getElementById("top-soccer-stats").classList.toggle("hidden", !isSoccer);
-        document.getElementById("top-soccer-stats").classList.toggle("flex", isSoccer);
-
-        if (state.mode === "TIME_TRIAL") {
-          configureCarRoster(1);
-          document.getElementById("active-mode-badge").textContent = "SOLO TIME TRIAL";
-        } else if (state.mode === "HARNESS_8") {
-          configureCarRoster(8);
-          document.getElementById("active-mode-badge").textContent = "8-CAR PACK HARNESS";
-        } else if (state.mode === "SOCCER") {
-          configureCarRoster(4);
-          document.getElementById("active-mode-badge").textContent = "CAR-SOCCER ARENA (2v2)";
-        } else {
-          configureCarRoster(4);
-          document.getElementById("active-mode-badge").textContent = "SOLO RACE (4 CARS)";
-        }
-
-        cars.forEach((c, idx) => {
-          const col = idx % 2;
-          const row = Math.floor(idx / 2);
-          const sx = (col === 0 ? -4.5 : 4.5);
-          const sz = -4 + row * 6.5;
-          c.resetState(sx, sz);
-        });
-
-        if (isSoccer) {
-          soccerBallState.x = 0; soccerBallState.y = 5; soccerBallState.z = -50;
-          soccerBallState.vx = 0; soccerBallState.vy = 0; soccerBallState.vz = 0;
-        }
-
-        state.raceTime = 0;
-        state.isCountdown = true;
-        state.isRaceActive = false;
-        state.countdownTimer = 2.4;
-      }
-
-      function openResultsModal() {
-        const modal = document.getElementById("modal-results");
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-        const standings = getStandings();
-        const myRank = standings.findIndex((c) => c.id === 1) + 1;
-        const suffixes = ["ST", "ND", "RD", "TH", "TH", "TH", "TH", "TH"];
-        document.getElementById("result-headline").textContent =
-          myRank + suffixes[Math.min(myRank - 1, 7)] + " PLACE FINISH!";
-        document.getElementById("result-time").textContent = formatTime(playerCar.finishTime);
-        document.getElementById("result-best").textContent = formatTime(state.bestTime);
-
-        const listEl = document.getElementById("result-standings-list");
-        listEl.innerHTML = "";
-        standings.forEach((c, idx) => {
-          const row = document.createElement("div");
-          row.className = "flex items-center justify-between px-3 py-1.5 rounded-lg " +
-            (c.id === 1 ? "bg-rose-500/25 border border-rose-400/40 font-bold text-white" : "bg-slate-900/70 text-slate-300");
-          const leftSpan = document.createElement("span");
-          leftSpan.textContent = (idx + 1) + ". " + c.name;
-          const rightSpan = document.createElement("span");
-          rightSpan.className = "font-mono";
-          rightSpan.textContent = c.finished ? formatTime(c.finishTime) : ("Lap " + c.lap + " (CP " + Math.max(0, c.checkpoint + 1) + ")");
-          row.appendChild(leftSpan);
-          row.appendChild(rightSpan);
-          listEl.appendChild(row);
-        });
-      }
-
-      // --- Update HUD DOM ---
-      function updateHUD() {
-        const standings = getStandings();
-        const myRank = standings.findIndex((c) => c.id === 1) + 1;
-        document.getElementById("hud-position").textContent = myRank + " / " + cars.length;
-        document.getElementById("hud-lap").textContent = playerCar.lap + " / " + state.totalLaps;
-        document.getElementById("hud-cp").textContent = Math.max(0, playerCar.checkpoint + 1) + " / " + CHECKPOINTS.length;
-        document.getElementById("hud-timer").textContent = formatTime(state.raceTime);
-        document.getElementById("hud-best").textContent = formatTime(state.bestTime);
-
-        const spd = Math.round(playerCar.speedKmh);
-        document.getElementById("hud-speed").textContent = String(spd);
-        const gear = spd < 5 ? "N" : ("G" + Math.min(6, Math.floor(spd / 42) + 1));
-        const gearEl = document.getElementById("hud-gear");
-        if (gearEl) gearEl.textContent = gear;
-
-        const boostPct = Math.round(playerCar.boost);
-        document.getElementById("hud-boost-pct").textContent = boostPct + "%";
-        document.getElementById("hud-boost-bar").style.width = boostPct + "%";
-
-        const badge = document.getElementById("hud-state-badge");
-        if (!playerCar.isGrounded) {
-          badge.textContent = "AIR PARKOUR";
-          badge.className = "text-[11px] font-extrabold px-2 py-0.5 rounded bg-purple-500/30 text-purple-200 border border-purple-400";
-        } else if (playerCar.isBoosting) {
-          badge.textContent = "NITRO BOOST";
-          badge.className = "text-[11px] font-extrabold px-2 py-0.5 rounded bg-rose-500/30 text-rose-200 border border-rose-400";
-        } else if (playerCar.isDrifting) {
-          badge.textContent = "DRIFT +CHARGE";
-          badge.className = "text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 border border-amber-400";
-        } else {
-          badge.textContent = "GRIP";
-          badge.className = "text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30";
-        }
-
-        const vignette = document.getElementById("speed-vignette");
-        vignette.style.opacity = (playerCar.isBoosting || playerCar.speedKmh > 195) ? "1" : "0";
-
-        document.getElementById("status-telemetry").textContent =
-          "Pos: (" + Math.round(playerCar.x) + ", " + Math.round(playerCar.y) + ", " + Math.round(playerCar.z) + ") • " +
-          (playerCar.isGrounded ? "Grounded" : "Airborne");
-
-        document.getElementById("soccer-score-blue").textContent = String(state.soccerBlue);
-        document.getElementById("soccer-score-orange").textContent = String(state.soccerOrange);
-
-        renderMinimap();
-      }
-
-      // --- Graphics Quality Presets: Low, Medium, High ---
-      function applyGraphicsQuality(level) {
-        state.graphicsPreset = level;
-        const dpr = window.devicePixelRatio || 1;
-        if (level === "LOW") {
-          renderer.setPixelRatio(Math.min(dpr, 1.0));
-          sunLight.castShadow = false;
-          scene.fog.density = 0.0024;
-          document.getElementById("btn-perf").textContent = "Laptop 60Hz";
-        } else if (level === "MEDIUM") {
-          renderer.setPixelRatio(Math.min(dpr, 1.5));
-          sunLight.castShadow = true;
-          scene.fog.density = 0.0017;
-          document.getElementById("btn-perf").textContent = "Med Arcade";
-        } else {
-          renderer.setPixelRatio(Math.min(dpr, 2.0));
-          sunLight.castShadow = true;
-          scene.fog.density = 0.0013;
-          document.getElementById("btn-perf").textContent = "High Ultra";
-        }
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        const map = { LOW: "gfx-low", MEDIUM: "gfx-medium", HIGH: "gfx-high" };
-        Object.keys(map).forEach((k) => {
-          const btn = document.getElementById(map[k]);
-          if (btn) {
-            btn.className = (k === level)
-              ? "flex-1 py-1.5 rounded-lg bg-emerald-500/30 text-xs font-bold text-emerald-200 border border-emerald-400"
-              : "flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700";
-          }
-        });
-        showToast("Graphics Quality: " + level);
-      }
-
-      function cycleGraphicsPreset() {
-        const order = ["LOW", "MEDIUM", "HIGH"];
-        const next = order[(order.indexOf(state.graphicsPreset) + 1) % order.length];
-        applyGraphicsQuality(next);
-      }
-
-      // --- Stage 3 Cross-Tab BroadcastChannel Network Sync ---
-      let netChannel = null;
-      function connectRoomChannel(code, isHost) {
-        try {
-          if (netChannel) netChannel.close();
-          netChannel = new BroadcastChannel("rooftop_rush_" + code);
-          document.getElementById("net-status-pill").textContent = (isHost ? "Hosting: " : "Joined: ") + code;
-          document.getElementById("net-status-pill").className = "text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
-          showToast((isHost ? "Hosted Room " : "Joined Room ") + code);
-          netChannel.onmessage = (ev) => {
-            if (ev.data && ev.data.type === "START_RACE") {
-              startMode("SOLO_RACE");
-            } else if (ev.data && ev.data.type === "TELEMETRY" && cars.length > 1) {
-              const peerCar = cars[1];
-              peerCar.isAI = false;
-              peerCar.x = ev.data.x;
-              peerCar.y = ev.data.y;
-              peerCar.z = ev.data.z;
-              peerCar.yaw = ev.data.yaw;
-              peerCar.updateTransform();
+          // Nitro Flames
+          this.visuals.flames.forEach((fl) => {
+            fl.visible = this.isNitro;
+            if (this.isNitro) {
+              fl.scale.set(1, 0.85 + Math.random() * 0.55, 1);
             }
+          });
+
+          this.audio.updateEngine(speedNorm, this.isNitro, this.isGrounded);
+
+          // Ocean Splashdown Respawn
+          if (this.mesh.position.y <= -25.2 || this.mesh.position.y < this.lastGround.y - 24) {
+            this.audio.playSplash();
+            this.onToast('OCEAN SPLASHDOWN! RESPAWNING...', '#fb7185');
+            this.respawnAtCheckpoint();
+          }
+        }
+      }
+
+      // --------------------------------------------------------------------------
+      // 7. MAIN VICE COAST GAME ENGINE
+      // --------------------------------------------------------------------------
+      class ViceCoastGameApp {
+        constructor() {
+          this.canvas = document.getElementById('game-canvas');
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            powerPreference: 'high-performance',
+          });
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.renderer.outputEncoding = THREE.sRGBEncoding;
+          this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          this.renderer.toneMappingExposure = 1.14;
+
+          this.scene = new THREE.Scene();
+          this.scene.fog = new THREE.FogExp2(0xfb7185, 0.00115);
+
+          const { skyTex, envMap } = buildViceReflectionEnv(this.renderer);
+          this.envMap = envMap;
+          this.scene.environment = envMap;
+
+          this.camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.5, 840);
+          this.camera.position.set(0, 9, 14);
+
+          this.setupLighting();
+          this.audio = new ViceAudioEngine();
+          this.world = new ViceCoastWorld(this.scene, skyTex, envMap);
+          this.track = new ViceParkourTrack(this.scene, envMap);
+
+          this.playerVisuals = createViceHypercar('#ff3377', false, envMap);
+          this.scene.add(this.playerVisuals.root);
+          this.player = new HypercarController(this.playerVisuals, this.audio, (msg, hexColor) => {
+            this.showToast(msg, hexColor);
+          });
+
+          this.rivalEnabled = true;
+          this.rivalVisuals = createViceHypercar('#06b6d4', true, envMap);
+          this.scene.add(this.rivalVisuals.root);
+          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 90 };
+
+          this.input = { up: false, down: false, left: false, right: false, drift: false, nitro: false };
+          this.best = 0;
+          try { this.best = parseInt(localStorage.getItem('vice_coast_rush_best') || '0', 10) || 0; } catch (e) {}
+          this.bestSavedAt = 0;
+          this.state = 'MENU';
+          this.skyTheme = 'sunset';
+          this.qualityMode = 'auto';
+          this.autoTier = 2;
+
+          this.lastTime = performance.now();
+          this.totalTime = 0;
+          this.fpsFrames = 0;
+          this.fpsAccum = 0;
+          this.fpsBadge = document.getElementById('hud-fps');
+
+          this.applyQuality('auto');
+          this.applyTheme('sunset');
+          this.bindControls();
+        }
+
+        setupLighting() {
+          this.hemiLight = new THREE.HemisphereLight(0xfef3c7, 0x0369a1, 1.1);
+          this.scene.add(this.hemiLight);
+
+          this.sunLight = new THREE.DirectionalLight(0xffedd5, 1.5);
+          this.sunLight.position.set(45, 78, 35);
+          this.sunLight.castShadow = true;
+          this.sunLight.shadow.camera.near = 10;
+          this.sunLight.shadow.camera.far = 220;
+          const d = 48;
+          this.sunLight.shadow.camera.left = -d;
+          this.sunLight.shadow.camera.right = d;
+          this.sunLight.shadow.camera.top = d;
+          this.sunLight.shadow.camera.bottom = -d;
+          this.scene.add(this.sunLight);
+          this.scene.add(this.sunLight.target);
+        }
+
+        applyTheme(theme) {
+          this.skyTheme = theme;
+          const btn = document.getElementById('btn-sky');
+          if (theme === 'sunset') {
+            this.scene.fog.color.setHex(0xfb7185);
+            this.hemiLight.color.setHex(0xfef3c7);
+            this.hemiLight.groundColor.setHex(0x0369a1);
+            this.sunLight.color.setHex(0xffedd5);
+            if (btn) btn.textContent = 'VICE SUNSET';
+          } else if (theme === 'neon') {
+            this.scene.fog.color.setHex(0x701a75);
+            this.hemiLight.color.setHex(0xf472b6);
+            this.hemiLight.groundColor.setHex(0x0f172a);
+            this.sunLight.color.setHex(0x38bdf8);
+            if (btn) btn.textContent = 'NEON DUSK';
+          } else {
+            this.scene.fog.color.setHex(0x7dd3fc);
+            this.hemiLight.color.setHex(0xffffff);
+            this.hemiLight.groundColor.setHex(0x0284c7);
+            this.sunLight.color.setHex(0xffffff);
+            if (btn) btn.textContent = 'SUNNY NOON';
+          }
+          this.world.setTheme(theme);
+        }
+
+        applyQuality(preset) {
+          this.qualityMode = preset;
+          document.querySelectorAll('.quality-btn').forEach((b) => {
+            b.classList.toggle('active', b.dataset.quality === preset);
+          });
+
+          const dpr = window.devicePixelRatio || 1;
+          if (preset === 'low') {
+            this.renderer.setPixelRatio(1.0);
+            this.renderer.shadowMap.enabled = false;
+            this.camera.far = 580;
+          } else if (preset === 'med' || preset === 'auto') {
+            this.autoTier = 2;
+            this.renderer.setPixelRatio(Math.min(dpr, 1.35));
+            this.renderer.shadowMap.enabled = true;
+            this.sunLight.shadow.mapSize.set(1024, 1024);
+            if (this.sunLight.shadow.map) {
+              this.sunLight.shadow.map.dispose();
+              this.sunLight.shadow.map = null;
+            }
+            this.camera.far = 780;
+          } else {
+            this.renderer.setPixelRatio(Math.min(dpr, 2.0));
+            this.renderer.shadowMap.enabled = true;
+            this.sunLight.shadow.mapSize.set(2048, 2048);
+            if (this.sunLight.shadow.map) {
+              this.sunLight.shadow.map.dispose();
+              this.sunLight.shadow.map = null;
+            }
+            this.camera.far = 840;
+          }
+          this.camera.updateProjectionMatrix();
+        }
+
+        launchRace() {
+          this.audio.unlock();
+          const rivalCheckbox = document.getElementById('toggle-rival');
+          this.rivalEnabled = rivalCheckbox ? rivalCheckbox.checked : true;
+          this.rivalVisuals.root.visible = this.rivalEnabled;
+
+          this.track.reset();
+          this.player.reset();
+          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 90 };
+          this.rivalVisuals.root.position.set(3.6, 4.2, -6);
+
+          this.state = 'PLAYING';
+          const modal = document.getElementById('start-modal');
+          if (modal) modal.classList.add('hidden');
+          this.showToast('VICE COAST PARKOUR GO!', '#f472b6');
+        }
+
+        setPaused(on) {
+          if (on && this.state === 'PLAYING') {
+            this.state = 'PAUSED';
+          } else if (!on && this.state === 'PAUSED') {
+            this.state = 'PLAYING';
+            this.lastTime = performance.now();
+          } else {
+            return;
+          }
+          const pb = document.getElementById('pause-banner');
+          if (pb) pb.classList.toggle('show', this.state === 'PAUSED');
+          if (this.state === 'PAUSED') for (const k in this.input) this.input[k] = false;
+        }
+
+        showToast(text, hexColor) {
+          const box = document.getElementById('combo-container');
+          if (!box) return;
+          const el = document.createElement('div');
+          el.className = 'toast-msg font-display';
+          el.style.color = hexColor || '#fde047';
+          el.textContent = text;
+          box.appendChild(el);
+          setTimeout(() => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, 1400);
+        }
+
+        updateRival(dt) {
+          if (!this.rivalEnabled) return;
+          const zDiff = this.player.mesh.position.z - this.rivalState.z;
+          const targetSpd = THREE.MathUtils.clamp(90 + zDiff * 0.45, 74, 114);
+          this.rivalState.speed = THREE.MathUtils.lerp(this.rivalState.speed, targetSpd, 2 * dt);
+          this.rivalState.z -= this.rivalState.speed * dt;
+
+          const surf = this.track.getSurfaceAt(this.rivalState.x, this.rivalState.z);
+          let targetX = this.rivalState.x;
+          for (const seg of this.track.segments) {
+            if (this.rivalState.z <= seg.zStart + 8 && this.rivalState.z >= seg.zEnd) {
+              targetX = seg.xCenter + 2.8;
+              break;
+            }
+          }
+          this.rivalState.x = THREE.MathUtils.lerp(this.rivalState.x, targetX, 4 * dt);
+
+          if (surf && this.rivalState.y <= surf.groundY + 0.6 && this.rivalState.vy <= 2) {
+            this.rivalState.y = surf.groundY;
+            this.rivalState.vy = surf.onRamp ? Math.max(9.5, this.rivalState.speed * 0.125) : 0;
+          } else {
+            this.rivalState.vy -= 33.0 * dt;
+            this.rivalState.y += this.rivalState.vy * dt;
+            if (this.rivalState.y < -16) {
+              this.rivalState.y = (surf ? surf.groundY : 6) + 2;
+              this.rivalState.vy = 0;
+            }
+          }
+
+          this.rivalVisuals.root.position.set(this.rivalState.x, this.rivalState.y, this.rivalState.z);
+          this.rivalVisuals.wheels.forEach((w) => {
+            w.spinHub.rotation.x -= this.rivalState.speed * dt * 2.2;
+          });
+        }
+
+        updateCamera(dt) {
+          const pPos = this.player.mesh.position;
+          const speedMag = Math.hypot(this.player.velocity.x, this.player.velocity.z);
+          const speedRatio = Math.min(1, speedMag / 124.5);
+
+          // Dynamic Supersonic FOV (62° to 95°)
+          const targetFov = 62 + speedRatio * 23 + (this.player.isNitro ? 10 : 0);
+          this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, 7 * dt);
+          this.camera.updateProjectionMatrix();
+
+          // Subtle High-Speed Rumble above 300 KM/H
+          const rumble = speedMag > 83 ? ((speedMag - 83) / 41.5) * 0.085 : 0;
+          const shakeX = (Math.random() - 0.5) * rumble;
+          const shakeY = (Math.random() - 0.5) * rumble;
+
+          const camX = pPos.x * 0.86 + shakeX;
+          const camY = pPos.y + 4.9 + (this.player.isGrounded ? 0 : 0.75) + shakeY;
+          const camZ = pPos.z + 10.5;
+
+          this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, camX, 9.5 * dt);
+          this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, camY, 7.5 * dt);
+          this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, camZ, 16 * dt);
+          this.camera.lookAt(pPos.x * 0.92, pPos.y + 1.4, pPos.z - 22);
+
+          this.sunLight.position.set(pPos.x + 42, pPos.y + 72, pPos.z + 28);
+          this.sunLight.target.position.set(pPos.x, pPos.y, pPos.z - 15);
+        }
+
+        updateHUD() {
+          const speedMag = Math.hypot(this.player.velocity.x, this.player.velocity.z);
+          const speedKmh = Math.round(speedMag * 3.6);
+          const dist = Math.max(0, Math.floor(-this.player.mesh.position.z));
+
+          document.getElementById('hud-checkpoint').textContent = 'CP ' + this.player.lastCheckpoint.id;
+          document.getElementById('hud-distance').textContent = dist + ' m';
+          document.getElementById('hud-score').textContent = Math.floor(this.player.score).toLocaleString();
+          document.getElementById('hud-speed').textContent = speedKmh;
+
+          const curScore = Math.floor(this.player.score);
+          if (curScore > this.best) {
+            this.best = curScore;
+            if (this.totalTime - this.bestSavedAt > 2) {
+              this.bestSavedAt = this.totalTime;
+              try { localStorage.setItem('vice_coast_rush_best', String(this.best)); } catch (e) {}
+            }
+          }
+          const bestEl = document.getElementById('hud-best');
+          if (bestEl) bestEl.textContent = this.best.toLocaleString();
+
+          const sec = this.player.elapsedTime;
+          const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+          const ss = String(Math.floor(sec % 60)).padStart(2, '0');
+          const ds = Math.floor((sec % 1) * 10);
+          document.getElementById('hud-timer').textContent = mm + ':' + ss + '.' + ds;
+
+          const nitroPct = Math.round(this.player.nitro);
+          document.getElementById('hud-nitro-bar').style.width = nitroPct + '%';
+          document.getElementById('hud-nitro-pct').textContent = nitroPct + '%';
+
+          const tag = document.getElementById('hud-state-tag');
+          const speedLines = document.getElementById('speed-lines');
+          if (this.player.isNitro) {
+            tag.textContent = 'HYPER NITRO 445+';
+            tag.style.color = '#f472b6';
+            speedLines.style.opacity = '1';
+          } else if (speedKmh >= 310) {
+            tag.textContent = 'SUPERSONIC';
+            tag.style.color = '#22d3ee';
+            speedLines.style.opacity = '0.55';
+          } else if (!this.player.isGrounded) {
+            tag.textContent = 'STUNT AIR';
+            tag.style.color = '#fb923c';
+            speedLines.style.opacity = '0';
+          } else if (this.player.isDrifting) {
+            tag.textContent = 'DRIFTING';
+            tag.style.color = '#fde047';
+            speedLines.style.opacity = '0';
+          } else {
+            tag.textContent = 'GRIP';
+            tag.style.color = '#34d399';
+            speedLines.style.opacity = '0';
+          }
+        }
+
+        trackFPS(dt) {
+          this.fpsFrames++;
+          this.fpsAccum += dt;
+          if (this.fpsAccum >= 0.75) {
+            const fps = Math.round(this.fpsFrames / this.fpsAccum);
+            if (this.fpsBadge) {
+              this.fpsBadge.textContent = fps + ' FPS';
+              this.fpsBadge.classList.toggle('warn', fps < 48);
+            }
+            if (this.qualityMode === 'auto' && this.state === 'PLAYING' && fps < 42 && this.autoTier > 0) {
+              this.autoTier--;
+              this.renderer.setPixelRatio(this.autoTier === 1 ? 1.0 : 0.85);
+              this.renderer.shadowMap.enabled = false;
+            }
+            this.fpsFrames = 0;
+            this.fpsAccum = 0;
+          }
+        }
+
+        bindControls() {
+          window.addEventListener('resize', () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+
+          // Paint Finish Swatches
+          document.querySelectorAll('.paint-swatch').forEach((swatch) => {
+            swatch.addEventListener('click', () => {
+              document.querySelectorAll('.paint-swatch').forEach((s) => s.classList.remove('selected'));
+              swatch.classList.add('selected');
+              this.playerVisuals.paintMat.color.set(swatch.dataset.color);
+              this.playerVisuals.underglowMat.color.set(swatch.dataset.color);
+              document.getElementById('selected-paint-name').textContent = swatch.dataset.name;
+            });
+          });
+
+          // Launch Button (Click & Touch)
+          const playBtn = document.getElementById('btn-play');
+          if (playBtn) {
+            playBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              this.launchRace();
+            });
+            playBtn.addEventListener('touchend', (e) => {
+              e.preventDefault();
+              this.launchRace();
+            }, { passive: false });
+          }
+
+          // Top Bar Controls
+          document.getElementById('btn-respawn').addEventListener('click', () => {
+            if (this.state === 'PLAYING') this.player.respawnAtCheckpoint();
+          });
+
+          document.getElementById('btn-sky').addEventListener('click', () => {
+            const next = this.skyTheme === 'sunset' ? 'neon' : this.skyTheme === 'neon' ? 'noon' : 'sunset';
+            this.applyTheme(next);
+          });
+
+          document.querySelectorAll('.quality-btn').forEach((btn) => {
+            btn.addEventListener('click', () => this.applyQuality(btn.dataset.quality));
+          });
+
+          const audioBtn = document.getElementById('btn-audio');
+          audioBtn.addEventListener('click', () => {
+            this.audio.unlock();
+            this.audio.enabled = !this.audio.enabled;
+            audioBtn.textContent = this.audio.enabled ? 'SFX ON' : 'SFX OFF';
+          });
+
+          // Keyboard Input + Zero-Delay Menu Launch via Enter/Space/W/Up
+          const keyMap = {
+            KeyW: 'up',
+            ArrowUp: 'up',
+            KeyS: 'down',
+            ArrowDown: 'down',
+            KeyA: 'left',
+            ArrowLeft: 'left',
+            KeyD: 'right',
+            ArrowRight: 'right',
+            Space: 'drift',
+            ShiftLeft: 'nitro',
+            ShiftRight: 'nitro',
+            KeyE: 'nitro',
           };
-          if (isHost) {
-            netChannel.postMessage({ type: "START_RACE" });
-          }
-        } catch (e) {
-          showToast("Room code ready for local sync");
-        }
-      }
 
-      // --- Wire Keyboard, Touch, Focus/Visibility, and UI Controls ---
-      function clearInputKeys() {
-        keys.gas = false; keys.brake = false; keys.left = false;
-        keys.right = false; keys.drift = false; keys.boost = false;
-      }
-
-      window.addEventListener("blur", clearInputKeys);
-      document.addEventListener("visibilitychange", () => {
-        if (document.hidden) clearInputKeys();
-      });
-
-      window.addEventListener("keydown", (e) => {
-        Sfx.init();
-        const k = e.key.toLowerCase();
-        if (k === "w" || e.key === "ArrowUp") keys.gas = true;
-        if (k === "s" || e.key === "ArrowDown") keys.brake = true;
-        if (k === "a" || e.key === "ArrowLeft") keys.left = true;
-        if (k === "d" || e.key === "ArrowRight") keys.right = true;
-        if (e.key === " ") keys.drift = true;
-        if (e.key === "Shift" || k === "e") keys.boost = true;
-        if (k === "r") playerCar.respawnAtCheckpoint();
-        if (k === "t") startMode(state.mode);
-        if (k === "c") state.cameraMode = (state.cameraMode + 1) % 3;
-        if (k === "p") cycleGraphicsPreset();
-        if (e.key === "Escape") toggleMenuModal();
-      });
-
-      window.addEventListener("keyup", (e) => {
-        const k = e.key.toLowerCase();
-        if (k === "w" || e.key === "ArrowUp") keys.gas = false;
-        if (k === "s" || e.key === "ArrowDown") keys.brake = false;
-        if (k === "a" || e.key === "ArrowLeft") keys.left = false;
-        if (k === "d" || e.key === "ArrowRight") keys.right = false;
-        if (e.key === " ") keys.drift = false;
-        if (e.key === "Shift" || k === "e") keys.boost = false;
-      });
-
-      function bindHoldButton(id, keyProp) {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        const press = (ev) => { ev.preventDefault(); Sfx.init(); keys[keyProp] = true; };
-        const release = (ev) => { ev.preventDefault(); keys[keyProp] = false; };
-        btn.addEventListener("mousedown", press);
-        btn.addEventListener("mouseup", release);
-        btn.addEventListener("mouseleave", release);
-        btn.addEventListener("touchstart", press, { passive: false });
-        btn.addEventListener("touchend", release, { passive: false });
-      }
-
-      bindHoldButton("touch-left", "left");
-      bindHoldButton("touch-right", "right");
-      bindHoldButton("touch-gas", "gas");
-      bindHoldButton("touch-brake", "brake");
-      bindHoldButton("touch-drift", "drift");
-      bindHoldButton("touch-boost", "boost");
-
-      function toggleMenuModal(forceClose) {
-        const m = document.getElementById("modal-menu");
-        if (forceClose === true || !m.classList.contains("hidden")) {
-          m.classList.add("hidden");
-          state.isMenuOpen = false;
-          state.isPaused = false;
-        } else {
-          m.classList.remove("hidden");
-          state.isMenuOpen = true;
-          state.isPaused = true;
-        }
-      }
-
-      document.getElementById("btn-open-menu").addEventListener("click", () => toggleMenuModal());
-      document.getElementById("btn-pause").addEventListener("click", () => {
-        state.isPaused = !state.isPaused;
-        document.getElementById("btn-pause").textContent = state.isPaused ? "Resume" : "Pause";
-        showToast(state.isPaused ? "Race Paused" : "Race Resumed");
-      });
-      document.getElementById("btn-close-menu").addEventListener("click", () => { Sfx.init(); toggleMenuModal(true); });
-      document.getElementById("btn-respawn").addEventListener("click", () => playerCar.respawnAtCheckpoint());
-      document.getElementById("btn-restart").addEventListener("click", () => startMode(state.mode));
-      document.getElementById("btn-perf").addEventListener("click", () => cycleGraphicsPreset());
-      document.getElementById("btn-audio").addEventListener("click", () => {
-        Sfx.init();
-        Sfx.muted = !Sfx.muted;
-        document.getElementById("btn-audio").textContent = Sfx.muted ? "SFX: OFF" : "SFX: ON";
-      });
-
-      document.getElementById("gfx-low").addEventListener("click", () => applyGraphicsQuality("LOW"));
-      document.getElementById("gfx-medium").addEventListener("click", () => applyGraphicsQuality("MEDIUM"));
-      document.getElementById("gfx-high").addEventListener("click", () => applyGraphicsQuality("HIGH"));
-
-      document.getElementById("mode-solo-race").addEventListener("click", () => { toggleMenuModal(true); startMode("SOLO_RACE"); });
-      document.getElementById("mode-time-trial").addEventListener("click", () => { toggleMenuModal(true); startMode("TIME_TRIAL"); });
-      document.getElementById("mode-harness-8").addEventListener("click", () => { toggleMenuModal(true); startMode("HARNESS_8"); });
-      document.getElementById("mode-soccer").addEventListener("click", () => { toggleMenuModal(true); startMode("SOCCER"); });
-
-      document.getElementById("btn-rematch").addEventListener("click", () => startMode(state.mode));
-      document.getElementById("btn-results-menu").addEventListener("click", () => {
-        document.getElementById("modal-results").classList.add("hidden");
-        toggleMenuModal();
-      });
-
-      ["rookie", "pro", "apex"].forEach((lvl) => {
-        document.getElementById("diff-" + lvl).addEventListener("click", () => {
-          state.aiDifficulty = lvl.toUpperCase();
-          ["rookie", "pro", "apex"].forEach((other) => {
-            const el = document.getElementById("diff-" + other);
-            el.className = (other === lvl)
-              ? "flex-1 py-1.5 rounded-lg bg-cyan-500/30 text-xs font-bold text-cyan-200 border border-cyan-400"
-              : "flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700";
+          window.addEventListener('pagehide', () => {
+            try { localStorage.setItem('vice_coast_rush_best', String(this.best)); } catch (e) {}
           });
-          showToast("AI Difficulty: " + state.aiDifficulty);
-        });
-      });
+          const clearInput = () => { for (const k in this.input) this.input[k] = false; };
+          window.addEventListener('blur', clearInput);
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              clearInput();
+              this.setPaused(true);
+            }
+          });
 
-      const paintMap = {
-        "paint-crimson": 0xff3366,
-        "paint-cyan": 0x00f0ff,
-        "paint-amber": 0xfacc15,
-        "paint-emerald": 0x10b981,
-        "paint-violet": 0xa855f7
-      };
-      Object.keys(paintMap).forEach((btnId) => {
-        document.getElementById(btnId).addEventListener("click", () => {
-          playerCar.bodyMat.color.setHex(paintMap[btnId]);
-          showToast("Car Paint Updated");
-        });
-      });
+          window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyP' || e.code === 'Escape') {
+              if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+                e.preventDefault();
+                this.setPaused(this.state === 'PLAYING');
+              }
+              return;
+            }
+            if (this.state === 'PAUSED') return;
+            if (this.state === 'MENU') {
+              if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                this.launchRace();
+                return;
+              }
+            }
+            if (e.code === 'KeyR' && this.state === 'PLAYING') {
+              this.player.respawnAtCheckpoint();
+              return;
+            }
+            const action = keyMap[e.code];
+            if (action) {
+              e.preventDefault();
+              this.input[action] = true;
+            }
+          });
 
-      document.getElementById("btn-host-room").addEventListener("click", () => {
-        const code = document.getElementById("input-room-code").value.trim() || "RR-SKYLINE-01";
-        connectRoomChannel(code, true);
-      });
-      document.getElementById("btn-join-room").addEventListener("click", () => {
-        const code = document.getElementById("input-room-code").value.trim() || "RR-SKYLINE-01";
-        connectRoomChannel(code, false);
-      });
+          window.addEventListener('keyup', (e) => {
+            const action = keyMap[e.code];
+            if (action) {
+              this.input[action] = false;
+            }
+          });
 
-      window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+          // Centered Ergonomic Console Mouse & Multi-Touch Bindings
+          const bindDriveBtn = (id, actions) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const press = (e) => {
+              e.preventDefault();
+              if (this.state === 'MENU') this.launchRace();
+              actions.forEach((act) => (this.input[act] = true));
+              el.classList.add('active');
+            };
+            const release = (e) => {
+              e.preventDefault();
+              actions.forEach((act) => (this.input[act] = false));
+              el.classList.remove('active');
+            };
+            el.addEventListener('touchstart', press, { passive: false });
+            el.addEventListener('touchend', release, { passive: false });
+            el.addEventListener('touchcancel', release, { passive: false });
+            el.addEventListener('mousedown', press);
+            el.addEventListener('mouseup', release);
+            el.addEventListener('mouseleave', release);
+          };
 
-      // --- Step Simulation Function (Used by RAF Loop and Automated QA Test Suite) ---
-      let worldClock = 0;
-      function stepSimulation(dt) {
-        if (state.isPaused) return;
-        worldClock += dt;
-
-        // Animate city traffic streaks & floating guide arrows
-        for (let i = 0; i < animatedTrafficLights.length; i++) {
-          const tl = animatedTrafficLights[i];
-          tl.mesh.position.z += tl.speed * dt;
-          if (tl.mesh.position.z > 160) tl.mesh.position.z = -380;
-          if (tl.mesh.position.z < -380) tl.mesh.position.z = 160;
+          bindDriveBtn('touch-left', ['left']);
+          bindDriveBtn('touch-right', ['right']);
+          bindDriveBtn('touch-brake', ['down', 'drift']);
+          bindDriveBtn('touch-accel', ['up']);
+          bindDriveBtn('touch-nitro', ['nitro']);
         }
-        for (let i = 0; i < floatingGuideArrows.length; i++) {
-          floatingGuideArrows[i].position.y = 6.1 + Math.sin(worldClock * 4 + i) * 0.45;
-        }
 
-        if (state.isCountdown) {
-          const prevSec = Math.ceil(state.countdownTimer);
-          state.countdownTimer -= dt;
-          const curSec = Math.ceil(state.countdownTimer);
-          const cdEl = document.getElementById("countdown-text");
-          if (curSec > 0) {
-            cdEl.textContent = String(curSec);
-            if (curSec !== prevSec) Sfx.countdown(false);
+        loop(now) {
+          requestAnimationFrame((t) => this.loop(t));
+          const dt = Math.min((now - this.lastTime) / 1000, 0.05);
+          this.lastTime = now;
+          this.totalTime += dt;
+
+          this.trackFPS(dt);
+
+          if (this.state === 'PLAYING') {
+            this.player.update(dt, this.input, this.track);
+            this.track.update(this.player.mesh.position.z, this.totalTime);
+            this.world.update(this.player.mesh.position.x, this.player.mesh.position.z, this.totalTime);
+            this.updateRival(dt);
+            this.updateCamera(dt);
+            this.updateHUD();
+          } else if (this.state === 'PAUSED') {
+            // frozen frame
           } else {
-            state.isCountdown = false;
-            state.isRaceActive = true;
-            cdEl.textContent = "GO!";
-            Sfx.countdown(true);
-            setTimeout(() => { cdEl.textContent = ""; }, 750);
+            // Live Attract Camera Orbiting Hero Hypercar on Vice Coast Sea Deck
+            this.world.update(0, 0, this.totalTime);
+            this.track.syncInstances(this.totalTime);
+            const orbitAngle = Math.sin(this.totalTime * 0.45) * 0.65;
+            this.camera.position.set(
+              Math.sin(orbitAngle) * 11,
+              7.8 + Math.sin(this.totalTime * 0.8) * 0.4,
+              9.5
+            );
+            this.camera.lookAt(0, 5.0, -14);
           }
-        } else if (state.isRaceActive) {
-          state.raceTime += dt;
+
+          this.renderer.render(this.scene, this.camera);
         }
 
-        for (let i = 0; i < cars.length; i++) {
-          stepCarPhysics(cars[i], dt);
-        }
-        resolveCollisionsAndSoccer(dt);
-        updateParticles(dt);
-        updateChaseCamera(dt);
-        updateHUD();
-
-        if (netChannel && state.isRaceActive) {
-          netChannel.postMessage({
-            type: "TELEMETRY",
-            x: playerCar.x, y: playerCar.y, z: playerCar.z, yaw: playerCar.yaw
-          });
+        start() {
+          this.lastTime = performance.now();
+          this.loop(this.lastTime);
         }
       }
 
-      // Expose deterministic QA & Inspection API on window.RooftopRushGame
-      window.RooftopRushGame = {
-        state,
-        keys,
-        cars,
-        playerCar,
-        CHECKPOINTS,
-        TRACK_SEGMENTS,
-        startMode,
-        toggleMenuModal,
-        applyGraphicsQuality,
-        stepSimulation,
-        openResultsModal
-      };
-
-      // --- Main Animation Loop ---
-      let lastTime = performance.now();
-      let frameCount = 0;
-      let fpsTimer = 0;
-      let animId = null;
-
-      function animate(now) {
-        animId = requestAnimationFrame(animate);
-        const rawDt = Math.min(0.05, (now - lastTime) / 1000);
-        lastTime = now;
-
-        frameCount += 1;
-        fpsTimer += rawDt;
-        if (fpsTimer >= 0.5) {
-          state.fps = Math.round(frameCount / fpsTimer);
-          const fpsEl = document.getElementById("fps-counter");
-          if (fpsEl) fpsEl.textContent = state.fps + " FPS";
-          frameCount = 0;
-          fpsTimer = 0;
-        }
-
-        stepSimulation(rawDt);
-        renderer.render(scene, camera);
-      }
-
-      window.onload = function () {
-        toggleMenuModal(true);
-        startMode("SOLO_RACE");
-        if (animId) cancelAnimationFrame(animId);
-        lastTime = performance.now();
-        animId = requestAnimationFrame(animate);
-      };
-    })();
+      const app = new ViceCoastGameApp();
+      window.__vice = app; // QA hook
+      app.start();
+    }
   </script>
 </body>
 </html>

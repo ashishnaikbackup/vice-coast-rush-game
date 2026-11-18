@@ -1,45 +1,47 @@
-# Rooftop Rush
+# Vice Coast Rush
 
-A browser-based 3D arcade car parkour racing prototype set among neon city rooftops. Drive, drift, boost, hit ramps, and race across rooftop routes.
+A fast, single-file 3D arcade stunt-driving game for the browser. Blast a hypercar across an endless chain of sea-stunt decks, hit ramps, grab Vice Orbs, chain boost pads and nitro, and see how far you can get.
 
 ## Play
 
-Once GitHub Pages is enabled, the game will be available at:
+**https://ashishnaikbackup.github.io/vice-coast-rush/** (once GitHub Pages is enabled for the repo)
 
-**https://ashishnaikbackup.github.io/Rooftop-Rush/**
+Or download `index.html` and open it in a modern browser (internet needed once for the Three.js CDN).
+
+## Controls
+
+| Action | Keys | Touch |
+| --- | --- | --- |
+| Steer / air pitch | `A` `D` / arrows | on-screen arrows |
+| Gas / brake | `W` `S` | GAS / BRAKE |
+| Drift | `Space` | BRAKE |
+| Nitro | `Shift` / `E` | NITRO |
+| Respawn | `R` | ↺ CP |
+| Pause | `P` / `Esc` | — |
 
 ## Features
 
-- 3D rooftop driving and stunt-style routes
-- Boost and drifting mechanics
-- Solo Rooftop Race and Solo Time Trial modes
-- Experimental stress-test and car-soccer modes
-- Car paint and graphics-quality options
-- Keyboard and touch-oriented controls
-- Responsive in-game interface
+- Endless procedurally chained decks: stunt straights, container bridges, sky pipes, neon platforms
+- Launch ramps, turbo chevron boost pads, collectible Vice Orbs, checkpoints
+- Drift and air-time stunt scoring, hyper-nitro, supersonic speed lines
+- Rival hypercar, 5 paint finishes, 3 sky themes, Low/Med/Auto/High graphics
+- Best score saved in your browser
 
-## Run locally
+## Changelog (playability pass)
 
-Download or clone this repository and open `index.html` in a modern browser. An internet connection is needed for the externally loaded Three.js and Tailwind CSS libraries.
-
-## Team room limitation
-
-The current room-code feature is a local browser prototype using `BroadcastChannel`. It does **not** provide real internet multiplayer or connect players on different devices over the internet.
+- **Fixed a crash:** `THREE.Object3D.DEFAULT_UP` does not exist in Three.js r128, so the car update threw every frame after launch.
+- **Fixed frozen steering:** reversing direction left a tiny non-zero steering value that blocked the opposite input.
+- **Retuned jumps:** ramps launched ~250 m against 22-34 m gaps, so cars overshot decks and dropped into the sea. One ramp now clears one gap.
+- **Fairer layout:** smaller side-to-side offset between decks.
+- **Self-centering car:** it straightens out when you release steering.
+- **Soft guard-rails:** slide along deck edges instead of dropping off.
+- **Smarter respawn:** back on the road where you last had ground, with speed to clear the next jump (old checkpoints could already be deleted, causing endless respawn loops).
+- Memory leak fixed (deck geometry is now disposed), pause, saved best score, stuck-key protection.
 
 ## Tech
 
-- HTML, CSS, JavaScript
-- Three.js (loaded from CDN)
-- Tailwind CSS (loaded from CDN)
-
-## Project status
-
-Portfolio prototype — not a finished commercial release. Gameplay has not been independently browser-playtested across devices. Known next steps include testing collision recovery and performance on mobile, improving level variety and atmosphere, and replacing local room synchronization with a real networking backend if online multiplayer is pursued.
-
-## Portfolio
-
-Developed as an independent browser-game experiment by [Ashish Naik](https://github.com/ashishnaikbackup).
+HTML, CSS and JavaScript in one file, Three.js r128 (CDN), procedural Web Audio. No build step.
 
 ## License
 
-Unless a license file is added, all rights are reserved by the repository owner. Third-party libraries remain subject to their own licenses.
+All rights reserved by the repository owner unless a license file is added. Three.js remains under its own license.
