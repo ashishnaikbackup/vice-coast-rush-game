@@ -33,6 +33,12 @@ Or download `index.html` and open it in a modern browser (internet needed once f
 
 ## Changelog
 
+### Update 3: smoother scenery
+
+- Islands, yachts and ocean waves now sit in the world and stream past you (they used to travel with the car, which looked like the background was buffering)
+- Auto quality no longer toggles shadows mid-run (that froze the game while shaders recompiled); it only lowers resolution after sustained low FPS
+- Shaders are pre-compiled at launch; lighter ocean material
+
 ### Update 2: speed, touch, music
 
 - About 40% slower top speed (210 km/h cruise, 290 km/h nitro) with retuned acceleration, ramps and rival

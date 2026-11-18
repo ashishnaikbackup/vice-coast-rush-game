@@ -1377,10 +1377,8 @@
             color: 0x06b6d4,
             emissive: 0x083344,
             emissiveIntensity: 0.45,
-            roughness: 0.16,
-            metalness: 0.65,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.12,
+            roughness: 0.2,
+            metalness: 0.6,
             envMap: envMap,
             envMapIntensity: 1.35,
             flatShading: false,
@@ -1410,6 +1408,8 @@
             { x: 220, zOff: -860, r: 76, h: 44, towerH: 68, color: 0xfb7185 },
           ];
           const count = this.islands.length;
+          for (const isl of this.islands) isl.wz = isl.zOff; // fixed world position; recycled as you pass
+          this.islandSpan = 146 * count;
 
           // Island Peaks
           this.islandPeaks = new THREE.InstancedMesh(
@@ -1448,6 +1448,7 @@
 
           // Luxury White Yachts anchored in the Vice Coast bay
           this.yachtCount = 8;
+          this.yachtZ = [];
           this.yachts = new THREE.InstancedMesh(
             new THREE.BoxGeometry(3.2, 1.8, 11.5),
             new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.3 }),
@@ -1485,7 +1486,11 @@
         }
 
         update(playerX, playerZ, timeSec) {
-          this.waterMesh.position.set(playerX, this.waterY, playerZ - 260);
+          // Snap the ocean to its own grid so wave crests stay fixed in the WORLD and stream past the car
+          const cell = 1800 / 48;
+          const wpx = Math.round(playerX / cell) * cell;
+          const wpz = Math.round((playerZ - 260) / cell) * cell;
+          this.waterMesh.position.set(wpx, this.waterY, wpz);
           this.reefMesh.position.set(playerX, this.waterY - 2.2, playerZ - 260);
           this.skyDome.position.set(playerX, 0, playerZ);
           this.sunGroup.position.set(playerX, 42, playerZ - 640);
@@ -1494,8 +1499,8 @@
           const posAttr = this.waterMesh.geometry.attributes.position;
           const arr = posAttr.array;
           for (let i = 0; i < arr.length; i += 3) {
-            const bx = this.waterBasePos[i];
-            const bz = this.waterBasePos[i + 2];
+            const bx = this.waterBasePos[i] + wpx;
+            const bz = this.waterBasePos[i + 2] + wpz;
             arr[i + 1] =
               Math.sin(bx * 0.045 + timeSec * 2.2) * 0.65 +
               Math.cos(bz * 0.045 + timeSec * 1.8) * 0.65;
@@ -1505,7 +1510,9 @@
           const foamPulse = 1.0 + Math.sin(timeSec * 2.4) * 0.045;
           for (let i = 0; i < this.islands.length; i++) {
             const isl = this.islands[i];
-            const iz = playerZ + isl.zOff;
+            // Islands live in world space: once one is well behind you it leaps ahead to the far horizon
+            if (isl.wz > playerZ + 170) isl.wz -= this.islandSpan;
+            const iz = isl.wz;
 
             _scratchObj.position.set(isl.x, this.waterY + isl.h * 0.46, iz);
             _scratchObj.rotation.set(0, i * 1.1, 0);
@@ -1540,7 +1547,9 @@
           for (let y = 0; y < this.yachtCount; y++) {
             const side = y % 2 === 0 ? -1 : 1;
             const yx = side * (62 + (y % 3) * 34);
-            const yz = playerZ - 85 - y * 95;
+            if (this.yachtZ[y] === undefined) this.yachtZ[y] = -85 - y * 95;
+            if (this.yachtZ[y] > playerZ + 90) this.yachtZ[y] -= this.yachtCount * 95;
+            const yz = this.yachtZ[y];
             const bob = Math.sin(timeSec * 2.5 + y) * 0.35;
             _scratchObj.position.set(yx, this.waterY + 0.65 + bob, yz);
             _scratchObj.rotation.set(Math.sin(timeSec * 1.8 + y) * 0.05, y * 0.6, Math.cos(timeSec * 2.1 + y) * 0.05);
@@ -2425,6 +2434,8 @@
           this.skyTheme = 'sunset';
           this.qualityMode = 'auto';
           this.autoTier = 2;
+          this.fpsGrace = 3;
+          this.lowFpsStreak = 0;
 
           this.lastTime = performance.now();
           this.totalTime = 0;
@@ -2525,6 +2536,9 @@
           this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 54 };
           this.rivalVisuals.root.position.set(3.6, 4.2, -6);
 
+          this.fpsGrace = 3;
+          this.lowFpsStreak = 0;
+          try { this.renderer.compile(this.scene, this.camera); } catch (e) {} // warm up shaders before the first frame
           this.state = 'PLAYING';
           const modal = document.getElementById('start-modal');
           if (modal) modal.classList.add('hidden');
@@ -2687,10 +2701,19 @@
               this.fpsBadge.textContent = fps + ' FPS';
               this.fpsBadge.classList.toggle('warn', fps < 48);
             }
-            if (this.qualityMode === 'auto' && this.state === 'PLAYING' && fps < 42 && this.autoTier > 0) {
-              this.autoTier--;
-              this.renderer.setPixelRatio(this.autoTier === 1 ? 1.0 : 0.85);
-              this.renderer.shadowMap.enabled = false;
+            // Adaptive quality: ignore the first seconds (shader warm-up) and one-off dips, and only ever
+            // lower the render resolution. Never toggle shadows mid-run: that recompiles every material
+            // and causes a visible freeze.
+            if (this.state === 'PLAYING' && this.fpsGrace > 0) this.fpsGrace -= this.fpsAccum;
+            if (this.qualityMode === 'auto' && this.state === 'PLAYING' && this.fpsGrace <= 0 && !document.hidden) {
+              this.lowFpsStreak = fps < 40 ? this.lowFpsStreak + 1 : 0;
+              if (this.lowFpsStreak >= 3 && this.autoTier > 0) {
+                this.autoTier--;
+                this.lowFpsStreak = 0;
+                this.fpsGrace = 4;
+                const dprNow = window.devicePixelRatio || 1;
+                this.renderer.setPixelRatio(this.autoTier === 1 ? Math.min(dprNow, 1.0) : Math.min(dprNow, 0.75));
+              }
             }
             this.fpsFrames = 0;
             this.fpsAccum = 0;
