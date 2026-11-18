@@ -4,7 +4,7 @@ A fast, single-file 3D arcade stunt-driving game for the browser. Blast a hyperc
 
 ## Play
 
-**https://ashishnaikbackup.github.io/vice-coast-rush/** (once GitHub Pages is enabled for the repo)
+**https://ashishnaikbackup.github.io/vice-coast-rush-game/** (once GitHub Pages is enabled for the repo)
 
 Or download `index.html` and open it in a modern browser (internet needed once for the Three.js CDN).
 
