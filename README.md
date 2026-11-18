@@ -12,12 +12,13 @@ Or download `index.html` and open it in a modern browser (internet needed once f
 
 | Action | Keys | Touch |
 | --- | --- | --- |
-| Steer / air pitch | `A` `D` / arrows | on-screen arrows |
-| Gas / brake | `W` `S` | GAS / BRAKE |
+| Gas | `W` / `↑` | GAS (right thumb) |
+| Brake / reverse | `S` / `↓` | BRAKE (right thumb) |
+| Steer / air pitch | `A` `D` / `←` `→` | ◀ ▶ (left thumb) |
 | Drift | `Space` | BRAKE |
 | Nitro | `Shift` / `E` | NITRO |
 | Respawn | `R` | ↺ CP |
-| Pause | `P` / `Esc` | — |
+| Pause | `P` / `Esc` | II button |
 
 ## Features
 
@@ -25,9 +26,21 @@ Or download `index.html` and open it in a modern browser (internet needed once f
 - Launch ramps, turbo chevron boost pads, collectible Vice Orbs, checkpoints
 - Drift and air-time stunt scoring, hyper-nitro, supersonic speed lines
 - Rival hypercar, 5 paint finishes, 3 sky themes, Low/Med/Auto/High graphics
+- Original synthwave soundtrack generated in the browser (no audio files), intensity follows your speed; music and SFX toggles
+- Touch layout: steering pad under the left thumb, pedals under the right thumb, haptic feedback on supported phones
+- Orb combos (up to x5) and distance milestone bonuses every 500 m
 - Best score saved in your browser
 
-## Changelog (playability pass)
+## Changelog
+
+### Update 2: speed, touch, music
+
+- About 40% slower top speed (210 km/h cruise, 290 km/h nitro) with retuned acceleration, ramps and rival
+- Thumb-reach touch pads, pause button, correct keyboard legend
+- Procedural synthwave soundtrack
+- Orb combos, milestone bonuses, how-to line
+
+### Update 1: playability pass
 
 - **Fixed a crash:** `THREE.Object3D.DEFAULT_UP` does not exist in Three.js r128, so the car update threw every frame after launch.
 - **Fixed frozen steering:** reversing direction left a tiny non-zero steering value that blocked the opposite input.

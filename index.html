@@ -669,6 +669,40 @@
     #pause-banner span { display: block; font-size: 12px; color: #cbd5e1; font-family: 'Segoe UI', sans-serif; margin-top: 4px; letter-spacing: 0.05em; }
     #pause-banner.show { display: block; }
 
+
+    /* ---- Touch layout: big thumb-reach pads in the bottom corners ---- */
+    :root { --btn: clamp(64px, 16vmin, 92px); }
+    .touch-pad {
+      display: none;
+      position: fixed;
+      z-index: 12;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      gap: 12px;
+      pointer-events: auto;
+    }
+    body.touch .touch-pad { display: grid; }
+    #pad-left { left: max(14px, env(safe-area-inset-left)); grid-template-columns: repeat(2, calc(var(--btn) * 1.12)); }
+    #pad-right {
+      right: max(14px, env(safe-area-inset-right));
+      grid-template-columns: var(--btn) calc(var(--btn) * 1.12);
+      grid-template-areas: "nitro nitro" "brake gas";
+    }
+    #pad-right .nitro { grid-area: nitro; }
+    #pad-right .brake { grid-area: brake; }
+    #pad-right .gas { grid-area: gas; }
+    .touch-pad .drive-btn { height: var(--btn); min-width: 0; width: 100%; padding: 0; border-radius: 20px; touch-action: none; }
+    .touch-pad .steer { height: calc(var(--btn) * 1.12); }
+    .touch-pad .steer .arrow-icon { font-size: 34px; }
+    .touch-pad .btn-main { font-size: 13px; }
+    #pad-right .gas { height: calc(var(--btn) * 1.12); }
+    body.touch .key-legend { display: none; }
+    body.touch .speedo-card { width: 215px; }
+    body.touch .bottom-deck { justify-content: center; }
+    @media (orientation: portrait) {
+      body.touch .bottom-deck { padding-bottom: calc(var(--btn) * 2 + 40px); }
+    }
+    @media (max-width: 680px) { .quality-group { display: none; } }
+
     /* Fatal Diagnostic Banner (Hidden unless an error occurs) */
     #error-banner {
       display: none;
@@ -740,7 +774,7 @@
   <!-- Supersonic Speed Lines Overlay -->
   <div id="speed-lines"></div>
 
-  <div id="pause-banner" class="hud-glass font-display">PAUSED<span>Press P / ESC to resume</span></div>
+  <div id="pause-banner" class="hud-glass font-display">PAUSED<span>Press P / ESC or tap II to resume</span></div>
 
   <!-- Fatal Error Diagnostic Banner (Only shown on unexpected exception) -->
   <div id="error-banner"></div>
@@ -788,7 +822,9 @@
 
         <span id="hud-fps" class="fps-badge hide-mobile">60 FPS</span>
 
-        <button id="btn-audio" class="pill-btn" title="Toggle V10 Engine Audio">SFX ON</button>
+        <button id="btn-music" class="pill-btn" title="Toggle Music">MUSIC ON</button>
+        <button id="btn-audio" class="pill-btn" title="Toggle Engine &amp; Effects">SFX ON</button>
+        <button id="btn-pause" class="pill-btn" title="Pause (P)">II</button>
         <button id="btn-respawn" class="pill-btn cp-btn" title="Respawn at Checkpoint (R)">↺ CP</button>
       </div>
     </div>
@@ -822,45 +858,38 @@
         </div>
       </div>
 
-      <!-- Center: Ergonomic Driving Console -->
-      <div class="hud-glass center-console">
-        <button id="touch-left" class="drive-btn" aria-label="Steer Left">
-          <span class="arrow-icon">◀</span>
-        </button>
-        <button id="touch-right" class="drive-btn" aria-label="Steer Right">
-          <span class="arrow-icon">▶</span>
-        </button>
-        <button id="touch-brake" class="drive-btn brake" aria-label="Brake and Drift">
-          <span class="btn-main">BRAKE</span>
-          <span class="btn-sub">DRIFT</span>
-        </button>
-        <button id="touch-accel" class="drive-btn gas" aria-label="Accelerate">
-          <span class="btn-main">GAS</span>
-          <span class="btn-sub">TURBO</span>
-        </button>
-        <button id="touch-nitro" class="drive-btn nitro" aria-label="Hyper Nitro">
-          <span class="btn-main">NITRO</span>
-          <span class="btn-sub">445+</span>
-        </button>
-      </div>
-
       <!-- Right: Keycap Legend -->
       <div class="hud-glass key-legend">
-        <div class="key-row"><span>Steer / Air Pitch</span><kbd>W A S D / ARROWS</kbd></div>
-        <div class="key-row"><span>Drift / Brake</span><kbd>SPACE / S</kbd></div>
+        <div class="key-row"><span>Gas</span><kbd>W / ↑</kbd></div>
+        <div class="key-row"><span>Brake / reverse</span><kbd>S / ↓</kbd></div>
+        <div class="key-row"><span>Steer</span><kbd>A D / ← →</kbd></div>
+        <div class="key-row"><span>Drift (while steering)</span><kbd>SPACE</kbd></div>
         <div class="key-row"><span>Hyper Nitro</span><kbd>SHIFT / E</kbd></div>
-        <div class="key-row"><span>Checkpoint</span><kbd>R</kbd></div>
+        <div class="key-row"><span>Respawn</span><kbd>R</kbd></div>
+        <div class="key-row"><span>Pause</span><kbd>P / ESC</kbd></div>
       </div>
     </div>
+  </div>
+
+
+  <!-- Touch pads: steering under the left thumb, pedals under the right thumb -->
+  <div id="pad-left" class="touch-pad">
+    <button id="touch-left" class="drive-btn steer" aria-label="Steer Left"><span class="arrow-icon">◀</span></button>
+    <button id="touch-right" class="drive-btn steer" aria-label="Steer Right"><span class="arrow-icon">▶</span></button>
+  </div>
+  <div id="pad-right" class="touch-pad">
+    <button id="touch-nitro" class="drive-btn nitro" aria-label="Hyper Nitro"><span class="btn-main">NITRO</span></button>
+    <button id="touch-brake" class="drive-btn brake" aria-label="Brake and Drift"><span class="btn-main">BRAKE</span><span class="btn-sub">DRIFT</span></button>
+    <button id="touch-accel" class="drive-btn gas" aria-label="Accelerate"><span class="btn-main">GAS</span></button>
   </div>
 
   <!-- START MODAL (VICE COAST LAUNCH OVERLAY) -->
   <div id="start-modal">
     <div class="hud-glass modal-card">
       <div class="vice-badge">VICE COAST • SEA STUNT EDITION</div>
-      <h1 class="game-title font-display">ROOFTOP RUSH</h1>
+      <h1 class="game-title font-display">VICE COAST RUSH</h1>
       <p class="game-subtitle">
-        Launch across tropical Vice Coast sea-parkour ramps at <strong>445+ KM/H</strong> with active hypercar aero, tap-calibrated steering, and instant ocean checkpoint respawns.
+        Jump a hypercar across tropical sea-stunt decks. Line up the ramps, grab Vice Orbs, chain boost pads and nitro, and go for distance.
       </p>
 
       <div class="config-panel">
@@ -920,6 +949,7 @@
       </div>
 
       <button id="btn-play" class="launch-btn font-display">LAUNCH RACE</button>
+      <div class="launch-hint" style="margin-bottom:6px">Line up with the next deck, hit the ramp, and steer in the air. Orbs in a row build a combo.</div>
       <div class="launch-hint">Click LAUNCH RACE or press <strong>ENTER / SPACE / W</strong> to start &bull; <strong>P</strong> pauses &bull; <strong>R</strong> respawns</div>
     </div>
   </div>
@@ -979,6 +1009,158 @@
       const _rightVec = new THREE.Vector3();
       const _UP = new THREE.Vector3(0, 1, 0);
 
+
+      // --------------------------------------------------------------------------
+      // 0. PROCEDURAL SYNTHWAVE SOUNDTRACK (no audio files; scheduled on the Web Audio clock)
+      //    A-minor loop  Am - F - C - G  @ 104 BPM: drums, pumping bass, arpeggio, pad, lead.
+      //    Intensity (0..1) follows the driving: calm menu -> full drums + lead at speed.
+      // --------------------------------------------------------------------------
+      class ViceMusic {
+        constructor(ctx, dest) {
+          this.ctx = ctx;
+          this.out = dest;
+          this.bpm = 104;
+          this.stepDur = 60 / this.bpm / 4;
+          this.step = 0;
+          this.nextTime = ctx.currentTime + 0.12;
+          this.intensity = 0.2;
+          this.chords = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+          this.bass = [45, 41, 48, 43];
+          this.lead = [
+            [[0, 76, 4], [6, 72, 2], [8, 74, 4], [12, 72, 2], [14, 69, 2]],
+            [[0, 72, 4], [6, 69, 2], [8, 72, 4], [12, 69, 2], [14, 65, 2]],
+            [[0, 76, 4], [6, 79, 2], [8, 76, 4], [12, 72, 2], [14, 76, 2]],
+            [[0, 74, 4], [6, 71, 2], [8, 67, 4], [12, 71, 2], [14, 74, 2]],
+          ];
+          // shared echo for arp + lead
+          this.echoIn = ctx.createGain();
+          this.delay = ctx.createDelay(1.0);
+          this.delay.delayTime.value = this.stepDur * 3;
+          const fb = ctx.createGain();
+          fb.gain.value = 0.32;
+          const echoOut = ctx.createGain();
+          echoOut.gain.value = 0.5;
+          this.echoIn.connect(this.delay);
+          this.delay.connect(fb);
+          fb.connect(this.delay);
+          this.delay.connect(echoOut);
+          echoOut.connect(this.out);
+          // noise buffer for snare / hats
+          const len = Math.floor(ctx.sampleRate * 0.5);
+          this.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+          const d = this.noiseBuf.getChannelData(0);
+          for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        }
+
+        mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+        tone(freq, t, dur, type, gain, cutoff, wet, atk) {
+          const c = this.ctx;
+          const o = c.createOscillator();
+          const g = c.createGain();
+          const f = c.createBiquadFilter();
+          o.type = type;
+          o.frequency.value = freq;
+          f.type = 'lowpass';
+          f.frequency.value = cutoff;
+          const a = atk || 0.005;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(gain, t + a);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(f); f.connect(g); g.connect(this.out);
+          if (wet) g.connect(this.echoIn);
+          o.start(t);
+          o.stop(t + dur + 0.05);
+        }
+
+        kick(t, gain) {
+          const c = this.ctx;
+          const o = c.createOscillator();
+          const g = c.createGain();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(150, t);
+          o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+          g.gain.setValueAtTime(gain, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+          o.connect(g); g.connect(this.out);
+          o.start(t); o.stop(t + 0.3);
+        }
+
+        noise(t, dur, type, freq, gain) {
+          const c = this.ctx;
+          const n = c.createBufferSource();
+          n.buffer = this.noiseBuf;
+          const f = c.createBiquadFilter();
+          f.type = type;
+          f.frequency.value = freq;
+          const g = c.createGain();
+          g.gain.setValueAtTime(gain, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          n.connect(f); f.connect(g); g.connect(this.out);
+          n.start(t); n.stop(t + dur + 0.02);
+        }
+
+        playStep(step, t) {
+          const k = this.intensity;
+          const inBar = step % 16;
+          const bar = Math.floor(step / 16) % 4;
+          const chord = this.chords[bar];
+          const sd = this.stepDur;
+
+          // Pad: one soft chord per bar
+          if (inBar === 0) {
+            for (let i = 0; i < 3; i++) {
+              this.tone(this.mtof(chord[i]), t, sd * 16, 'sawtooth', 0.024, 900, false, 0.35);
+              this.tone(this.mtof(chord[i]) * 1.006, t, sd * 16, 'sawtooth', 0.018, 900, false, 0.35);
+            }
+          }
+
+          // Arpeggio (16ths), brighter as intensity rises
+          const arpIdx = [0, 1, 2, 1, 0, 1, 2, 1, 0, 2, 1, 2, 0, 1, 2, 1][inBar];
+          this.tone(this.mtof(chord[arpIdx] + 12), t, sd * 1.6, 'square', 0.04 + 0.01 * k, 1100 + 1800 * k, true);
+
+          if (k < 0.3) {
+            if (inBar % 8 === 0) this.kick(t, 0.22); // calm menu: soft pulse + pad + arp
+            return;
+          }
+
+          // Drums
+          if (inBar % 4 === 0) this.kick(t, 0.55);
+          if (inBar === 4 || inBar === 12) {
+            this.noise(t, 0.16, 'bandpass', 1900, 0.16);
+            this.tone(190, t, 0.1, 'triangle', 0.1, 1500, false);
+          }
+          if (inBar % 4 === 2) this.noise(t, 0.05, 'highpass', 7500, 0.07);
+          if (k > 0.65 && inBar % 2 === 1) this.noise(t, 0.03, 'highpass', 8500, 0.035);
+
+          // Pumping bass (syncopated 8ths)
+          if (inBar === 0 || inBar === 3 || inBar === 6 || inBar === 8 || inBar === 11 || inBar === 14) {
+            const r = this.bass[bar];
+            this.tone(this.mtof(inBar === 6 || inBar === 14 ? r + 12 : r), t, sd * 2.2, 'sawtooth', 0.085, 420, false);
+          }
+
+          // Lead hook
+          if (k > 0.45) {
+            for (const n of this.lead[bar]) {
+              if (n[0] === inBar) {
+                this.tone(this.mtof(n[1]), t, sd * n[2] * 0.95, 'square', 0.032, 2600, true, 0.01);
+              }
+            }
+          }
+        }
+
+        // Schedule every step that falls before `horizon` (audio-clock seconds)
+        pump(horizon) {
+          if (this.nextTime < this.ctx.currentTime - 0.5) this.nextTime = this.ctx.currentTime + 0.05;
+          while (this.nextTime < horizon) {
+            this.playStep(this.step, this.nextTime);
+            this.nextTime += this.stepDur;
+            this.step++;
+          }
+        }
+      }
+      window.__ViceMusic = ViceMusic;
+
       // --------------------------------------------------------------------------
       // 1. PROCEDURAL WEB AUDIO V10 ENGINE & STUNT SYNTHESIZER
       // --------------------------------------------------------------------------
@@ -989,6 +1171,11 @@
           this.oscMain = null;
           this.oscSub = null;
           this.masterGain = null;
+          this.musicEnabled = true;
+          this.music = null;
+          this.musicGain = null;
+          this.musicTimer = null;
+          this.musicLevel = 0.5;
         }
 
         unlock() {
@@ -1019,6 +1206,7 @@
 
               this.oscMain.start();
               this.oscSub.start();
+              this.startMusic();
             }
             if (this.ctx && this.ctx.state === 'suspended') {
               this.ctx.resume();
@@ -1027,6 +1215,39 @@
             // Audio unlock safely ignored if blocked
           }
         }
+
+        startMusic() {
+          if (this.music || !this.ctx) return;
+          const comp = this.ctx.createDynamicsCompressor();
+          comp.threshold.value = -14;
+          comp.ratio.value = 4;
+          this.musicGain = this.ctx.createGain();
+          this.musicGain.gain.value = this.musicEnabled ? this.musicLevel : 0;
+          this.musicGain.connect(comp);
+          comp.connect(this.ctx.destination);
+          this.music = new ViceMusic(this.ctx, this.musicGain);
+          this.musicTimer = setInterval(() => {
+            if (this.ctx && this.ctx.state === 'running') this.music.pump(this.ctx.currentTime + 0.25);
+          }, 50);
+        }
+
+        setMusicEnabled(on) {
+          this.musicEnabled = on;
+          if (this.musicGain) this.musicGain.gain.setTargetAtTime(on ? this.musicLevel : 0, this.ctx.currentTime, 0.08);
+        }
+
+        setMusicIntensity(v) {
+          if (this.music) this.music.intensity += (v - this.music.intensity) * 0.05;
+        }
+
+        duckMusic(on) {
+          if (this.musicGain && this.musicEnabled) {
+            this.musicGain.gain.setTargetAtTime(on ? this.musicLevel * 0.3 : this.musicLevel, this.ctx.currentTime, 0.1);
+          }
+        }
+
+        suspend() { if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(() => {}); }
+        resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {}); }
 
         updateEngine(speedRatio, isNitro, isGrounded) {
           if (!this.ctx || !this.masterGain) return;
@@ -1039,7 +1260,7 @@
           const freq = 50 + speedRatio * 150 + pitchBoost;
           this.oscMain.frequency.setTargetAtTime(freq, now, 0.06);
           this.oscSub.frequency.setTargetAtTime(freq * 0.5, now, 0.06);
-          this.masterGain.gain.setTargetAtTime(isNitro ? 0.08 : 0.045, now, 0.08);
+          this.masterGain.gain.setTargetAtTime(isNitro ? 0.06 : 0.03, now, 0.08);
         }
 
         playBeep(f1, f2, dur, type, vol) {
@@ -1825,10 +2046,10 @@
           this.onToast = onToast;
 
           // World units/sec -> * 3.6 = KM/H (96 * 3.6 = 345 KM/H, 124 * 3.6 = 446 KM/H)
-          this.maxSpeed = 96;
-          this.nitroMaxSpeed = 124.5;
-          this.accelRate = 70;
-          this.brakeRate = 86;
+          this.maxSpeed = 58;
+          this.nitroMaxSpeed = 80;
+          this.accelRate = 40;
+          this.brakeRate = 64;
           this.gravity = 33.0;
 
           // Tap-Calibrated Progressive Steering
@@ -1838,7 +2059,7 @@
           this.tapMaxCap = 0.22;
           this.steerRampSpeed = 3.0;
           this.steerReturnSpeed = 9.8;
-          this.maxTurnRate = 1.46;
+          this.maxTurnRate = 1.55;
 
           this.steerDotEl = document.getElementById('hud-steer-dot');
           this.reset();
@@ -1850,7 +2071,7 @@
           this.chassis.position.set(0, 0, 0);
           this.chassis.rotation.set(0, 0, 0);
 
-          this.velocity = new THREE.Vector3(0, 0, -36);
+          this.velocity = new THREE.Vector3(0, 0, -30);
           this.isGrounded = true;
           this.wasGrounded = true;
           this.coyoteTimer = 0;
@@ -1867,6 +2088,9 @@
 
           this.lastCheckpoint = { id: 0, x: 0, y: 4.3, z: -6 };
           this.lastGround = { x: 0, y: 4.3, z: -6 };
+          this.nextMilestone = 500;
+          this.orbChain = 0;
+          this.chainTimer = 0;
           this.track = null;
           this.edgeCooldown = 0;
         }
@@ -1888,7 +2112,7 @@
           this.mesh.position.set(cp.x, cp.y + 0.5, cp.z);
           this.mesh.rotation.set(0, 0, 0);
           this.chassis.rotation.set(0, 0, 0);
-          this.velocity.set(0, 0, -62);
+          this.velocity.set(0, 0, -46);
           this.isGrounded = true;
           this.airTime = 0;
           this.currentSteerAngle = 0;
@@ -1942,6 +2166,18 @@
 
           if (this.boostPadTimer > 0) this.boostPadTimer -= dt;
           if (this.edgeCooldown > 0) this.edgeCooldown -= dt;
+          if (this.chainTimer > 0) {
+            this.chainTimer -= dt;
+            if (this.chainTimer <= 0) this.orbChain = 0;
+          }
+          const distNow = Math.floor(-this.mesh.position.z);
+          if (distNow >= this.nextMilestone) {
+            const bonus = Math.round(this.nextMilestone * 2);
+            this.score += bonus;
+            this.onToast(this.nextMilestone + ' M  +' + bonus, '#f9a8d4');
+            this.audio.playCheckpoint();
+            this.nextMilestone += 500;
+          }
           const wantsNitro = input.nitro && this.nitro > 2;
           this.isNitro = wantsNitro || this.boostPadTimer > 0;
 
@@ -2032,6 +2268,7 @@
               const pts = Math.round(this.airTime * 360);
               this.score += pts;
               this.onToast('STUNT LANDING +' + pts, '#fde047');
+              if (navigator.vibrate) navigator.vibrate(18);
             }
             this.airTime = 0;
 
@@ -2082,9 +2319,13 @@
               ) {
                 orb.collected = true;
                 this.nitro = Math.min(100, this.nitro + 24);
-                this.score += 250;
+                this.orbChain = this.chainTimer > 0 ? Math.min(5, this.orbChain + 1) : 1;
+                this.chainTimer = 3.5;
+                const orbPts = 250 * this.orbChain;
+                this.score += orbPts;
                 this.audio.playOrb();
-                this.onToast('VICE ORB +250', '#fef08a');
+                this.onToast(this.orbChain > 1 ? 'ORB COMBO x' + this.orbChain + '  +' + orbPts : 'VICE ORB +' + orbPts, '#fef08a');
+                if (navigator.vibrate) navigator.vibrate(8);
               }
             }
           }
@@ -2174,7 +2415,7 @@
           this.rivalEnabled = true;
           this.rivalVisuals = createViceHypercar('#06b6d4', true, envMap);
           this.scene.add(this.rivalVisuals.root);
-          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 90 };
+          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 54 };
 
           this.input = { up: false, down: false, left: false, right: false, drift: false, nitro: false };
           this.best = 0;
@@ -2281,7 +2522,7 @@
 
           this.track.reset();
           this.player.reset();
-          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 90 };
+          this.rivalState = { x: 3.6, y: 4.2, z: -6, vy: 0, speed: 54 };
           this.rivalVisuals.root.position.set(3.6, 4.2, -6);
 
           this.state = 'PLAYING';
@@ -2299,6 +2540,7 @@
           } else {
             return;
           }
+          this.audio.duckMusic(this.state === 'PAUSED');
           const pb = document.getElementById('pause-banner');
           if (pb) pb.classList.toggle('show', this.state === 'PAUSED');
           if (this.state === 'PAUSED') for (const k in this.input) this.input[k] = false;
@@ -2320,7 +2562,7 @@
         updateRival(dt) {
           if (!this.rivalEnabled) return;
           const zDiff = this.player.mesh.position.z - this.rivalState.z;
-          const targetSpd = THREE.MathUtils.clamp(90 + zDiff * 0.45, 74, 114);
+          const targetSpd = THREE.MathUtils.clamp(56 + zDiff * 0.3, 46, 72);
           this.rivalState.speed = THREE.MathUtils.lerp(this.rivalState.speed, targetSpd, 2 * dt);
           this.rivalState.z -= this.rivalState.speed * dt;
 
@@ -2355,7 +2597,7 @@
         updateCamera(dt) {
           const pPos = this.player.mesh.position;
           const speedMag = Math.hypot(this.player.velocity.x, this.player.velocity.z);
-          const speedRatio = Math.min(1, speedMag / 124.5);
+          const speedRatio = Math.min(1, speedMag / 80);
 
           // Dynamic Supersonic FOV (62° to 95°)
           const targetFov = 62 + speedRatio * 23 + (this.player.isNitro ? 10 : 0);
@@ -2363,7 +2605,7 @@
           this.camera.updateProjectionMatrix();
 
           // Subtle High-Speed Rumble above 300 KM/H
-          const rumble = speedMag > 83 ? ((speedMag - 83) / 41.5) * 0.085 : 0;
+          const rumble = speedMag > 56 ? ((speedMag - 56) / 24) * 0.07 : 0;
           const shakeX = (Math.random() - 0.5) * rumble;
           const shakeY = (Math.random() - 0.5) * rumble;
 
@@ -2414,10 +2656,10 @@
           const tag = document.getElementById('hud-state-tag');
           const speedLines = document.getElementById('speed-lines');
           if (this.player.isNitro) {
-            tag.textContent = 'HYPER NITRO 445+';
+            tag.textContent = 'HYPER NITRO';
             tag.style.color = '#f472b6';
             speedLines.style.opacity = '1';
-          } else if (speedKmh >= 310) {
+          } else if (speedKmh >= 205) {
             tag.textContent = 'SUPERSONIC';
             tag.style.color = '#22d3ee';
             speedLines.style.opacity = '0.55';
@@ -2500,6 +2742,24 @@
             btn.addEventListener('click', () => this.applyQuality(btn.dataset.quality));
           });
 
+          // Touch devices get the thumb pads; also switch on at the first real touch (hybrid laptops stay keyboard-first)
+          const enableTouch = () => document.body.classList.add('touch');
+          if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) enableTouch();
+          window.addEventListener('touchstart', enableTouch, { once: true, passive: true });
+          // Browsers only allow audio after a gesture: start the music on the first one
+          const firstGesture = () => { this.audio.unlock(); };
+          window.addEventListener('pointerdown', firstGesture, { once: true });
+          window.addEventListener('keydown', firstGesture, { once: true });
+
+          const musicBtn = document.getElementById('btn-music');
+          musicBtn.addEventListener('click', () => {
+            this.audio.unlock();
+            this.audio.setMusicEnabled(!this.audio.musicEnabled);
+            musicBtn.textContent = this.audio.musicEnabled ? 'MUSIC ON' : 'MUSIC OFF';
+          });
+          document.getElementById('btn-pause').addEventListener('click', () => this.setPaused(this.state === 'PLAYING'));
+          document.addEventListener('contextmenu', (e) => e.preventDefault());
+
           const audioBtn = document.getElementById('btn-audio');
           audioBtn.addEventListener('click', () => {
             this.audio.unlock();
@@ -2532,6 +2792,9 @@
             if (document.hidden) {
               clearInput();
               this.setPaused(true);
+              this.audio.suspend();
+            } else {
+              this.audio.resume();
             }
           });
 
@@ -2614,9 +2877,12 @@
             this.updateRival(dt);
             this.updateCamera(dt);
             this.updateHUD();
+            const spN = Math.min(1, Math.hypot(this.player.velocity.x, this.player.velocity.z) / 60);
+            this.audio.setMusicIntensity(0.5 + spN * 0.3 + (this.player.isNitro ? 0.2 : 0));
           } else if (this.state === 'PAUSED') {
             // frozen frame
           } else {
+            this.audio.setMusicIntensity(0.2);
             // Live Attract Camera Orbiting Hero Hypercar on Vice Coast Sea Deck
             this.world.update(0, 0, this.totalTime);
             this.track.syncInstances(this.totalTime);
