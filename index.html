@@ -224,8 +224,9 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      margin: auto 0;
-      gap: 4px;
+      margin: 0 0 auto;
+      padding-top: 15vh;
+      gap: 2px;
     }
 
     @keyframes floatToast {
@@ -237,10 +238,10 @@
 
     .toast-msg {
       animation: floatToast 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      font-size: 22px;
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: 0.06em;
-      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.9), 0 0 20px rgba(236, 72, 153, 0.55);
+      letter-spacing: 0.08em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 10px rgba(236, 72, 153, 0.4);
       text-align: center;
     }
 
@@ -701,7 +702,7 @@
     @media (orientation: portrait) {
       body.touch .bottom-deck { padding-bottom: calc(var(--btn) * 2 + 40px); }
     }
-    @media (max-width: 680px) { .quality-group { display: none; } }
+    @media (max-width: 680px) { .quality-group { display: none; } .toast-msg { font-size: 12px; } }
 
     /* Fatal Diagnostic Banner (Hidden unless an error occurs) */
     #error-banner {
@@ -2301,7 +2302,7 @@
               ) {
                 if (this.boostPadTimer <= 0.2) {
                   this.audio.playBoost();
-                  this.onToast('TURBO CHEVRON BOOST!', '#22d3ee');
+                  this.onToast('BOOST!', '#22d3ee');
                 }
                 this.boostPadTimer = 1.5;
                 this.nitro = Math.min(100, this.nitro + 32);
@@ -2676,7 +2677,7 @@
           } else if (speedKmh >= 205) {
             tag.textContent = 'SUPERSONIC';
             tag.style.color = '#22d3ee';
-            speedLines.style.opacity = '0.55';
+            speedLines.style.opacity = '0.35';
           } else if (!this.player.isGrounded) {
             tag.textContent = 'STUNT AIR';
             tag.style.color = '#fb923c';
